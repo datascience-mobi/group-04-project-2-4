@@ -1,0 +1,78 @@
+---
+title: "Project 2 Group 4"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Project 2 Group 4
+## von Anna, Ann-Sophie und Jana
+
+über colnames schauen, wo erlotinib: 249 - 307
+```{r }
+erlotinib_treated <- NCI_TPW_gep_treated[, 249:307]
+erlotinib_untreated <- NCI_TPW_gep_untreated[, 249:307]
+```
+
+
+als dataframe speichern
+```{r }
+erlotinib_treated <- as.data.frame(erlotinib_treated)
+erlotinib_untreated <- as.data.frame(erlotinib_untreated)
+```
+
+beide zusammenfügen
+```{r }
+erlotinib_all <- cbind (erlotinib_treated, erlotinib_untreated)
+```
+
+Principal component analysis
+```{r }
+pca <- prcomp(erlotinib_all)
+plot(pca, type = "l")
+plot(pca$rotation[,1], pca$rotation[,2])
+
+color <- ifelse(colnames(erlotinib_all) == colnames(erlotinib_treated), "forestgreen", "firebrick")
+plot(pca$rotation[,1], pca$rotation[,2], col = color)
+```
+
+Z-Transormation: Median und Standardabweichung berechnen
+```{r }
+median_gene <- apply (erlotinib_all, 1, function (x){
++ median(x) })
+median(median_gene)
+sd_gene <- apply(erlotinib_all, 1, function (x){
+ + sd(x) })
+sd (sd_gene)
+erlotinib_all_z_transformed <- (erlotinib_all-median(median_gene)) / sd(sd_gene)
+```
+
+erlotinib_normalized_z_transformed: treated-untreated + z-Transformation + PCA 
+```{r }
+erlotinib_normalized <- erlotinib_treated - erlotinib_untreated
+
+median_gene <- apply (erlotinib_normalized, 1, function (x){
++ median(x) })
+sd_gene <- apply(erlotinib_normalized, 1, function (x){
++ sd(x) })
+erlotinib_normalized_z_transformed <- (erlotinib_normalized-median(median_gene)) / sd(sd_gene)
+
+pca <- prcomp(erlotinib_normalized_z_transformed)
+plot(pca$rotation[,1], pca$rotation[,2])
+```
+
+select cell lines with highest variance
+```{r}
+var_cell_line <- apply(erlotinib_normalized_z_transformed, 2, function (x) {
++ var(x)})
+cell_line_var_greater_75quantile <- var_cell_line [which (var_cell_line > quantile(var_cell_line,0.75))]
+cell_line_var_decreasing_top15 <- sort(cell_line_var_greater_75quantile, decreasing = TRUE)
+
+table_cell_lines_var_top15 <- cbind(names(cell_line_var_decreasing_top15), cell_line_var_decreasing_top15)
+rownames(table_cell_lines_var_top15) <- c(1:15)
+colnames(table_cell_lines_var_top15) <- c("cell line", "variance")
+```
