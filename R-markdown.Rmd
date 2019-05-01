@@ -93,12 +93,21 @@ plot(pca$rotation[,1], pca$rotation[,2])
 text(pca$rotation, labels = rownames(erlotinib_normalized_z_transformed), cex = 0.4, pos = 3)
 ```
 
-PCA visualization with factoextra package: 
+PCA visualization with factoextra package (according to www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/118-principal-component-analysis-in-t-prcomp-vs-princomp/) : 
 ```{r}
 install.packages("factoextra")
 library(factoextra)
 fviz_eig(pca) #shows percentage explained by each PC
+
+#plot of cell lines with gradient colors by the quality of representation
 fviz_pca_ind(pca, col.ind = "cos2", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"))
+
+#plot of genes showing their contribution
+fviz_pca_var(pca, col.var ="contrib", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"))
+
+#get contribution of genes to the PCs
+results.genes <- get_pca_var(pca)
+genes_pca_highest_contribution <- results.genes$contrib
 ```
 
 
