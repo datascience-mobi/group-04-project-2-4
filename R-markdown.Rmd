@@ -3,21 +3,43 @@ title: "Project 2 Group 4"
 output:
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+## von Anna, Ann-Sophie und Jana
+
+```{r, include=FALSE}
+#Load required packages
+library(knitr)
+library(factoextra)
 ```
 
-#Project 2 Group 4
-## von Anna, Ann-Sophie und Jana
+```{r setup, include=FALSE} 
+#code and output not included in final file
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+
+Load data
+```{r }
+NCI_TPW_gep_treated <- readRDS(url("https://ndownloader.figshare.com/files/14720180?private_link=db1411debcfbe2618d2f"))
+NCI_TPW_gep_untreated <- readRDS(url("https://ndownloader.figshare.com/files/14720183?private_link=db1411debcfbe2618d2f"))
+NCI_TPW_metadata <- read.delim("https://ndownloader.figshare.com/files/14720186?private_link=db1411debcfbe2618d2f")
+NegLogGI50 <- readRDS(url("https://ndownloader.figshare.com/files/14720210?private_link=074e0120fe5e682f3d14"))
+CCLE_basalexpression <- readRDS(url("https://ndownloader.figshare.com/files/14770127?private_link=fc0c71246dc192982a3c"))
+CCLE_copynumber <- readRDS(url("https://ndownloader.figshare.com/files/14770130?private_link=fc0c71246dc192982a3c"))
+CCLE_mutations <- readRDS(url("https://ndownloader.figshare.com/files/14770133?private_link=fc0c71246dc192982a3c"))
+cellline_annotation <-read.delim("https://ndownloader.figshare.com/files/14768981?private_link=efb6a529eaf2d4dc6432")
+drug_annotation <- read.delim("https://ndownloader.figshare.com/files/14768984?private_link=efb6a529eaf2d4dc6432")
+```
+
 
 new dataframe with only erlotinib columns: 249 - 307
 ```{r }
 erlotinib_treated <- NCI_TPW_gep_treated[, 249:307]
 erlotinib_untreated <- NCI_TPW_gep_untreated[, 249:307]
 ```
-
 
 save as dataframe
 ```{r }
@@ -34,7 +56,6 @@ Principal component analysis
 ```{r }
 pca <- prcomp(erlotinib_all)
 plot(pca, type = "l")
-plot(pca$rotation[,1], pca$rotation[,2])
 
 color <- ifelse(colnames(erlotinib_all) == colnames(erlotinib_treated), "forestgreen", "firebrick")
 plot(pca$rotation[,1], pca$rotation[,2], col = color)
@@ -75,12 +96,12 @@ cell_line_var_decreasing_top15 <- sort(cell_line_var_greater_75quantile, decreas
 table_cell_lines_var_top15 <- cbind(names(cell_line_var_decreasing_top15), cell_line_var_decreasing_top15)
 rownames(table_cell_lines_var_top15) <- c(1:15)
 colnames(table_cell_lines_var_top15) <- c("cell line", "variance")
+#kable(): simple table formatting function
+kable(table_cell_lines_var_top15)
 ```
 
 PCA visualization with factoextra package: 
 ```{r}
-install.packages("factoextra")
-library(factoextra)
 fviz_eig(pca) #shows percentage explained by each PC
 fviz_pca_ind(pca, col.ind = "cos2", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"))
 ```
@@ -95,8 +116,6 @@ text(pca$rotation, labels = rownames(erlotinib_normalized_z_transformed), cex = 
 
 PCA visualization with factoextra package (according to www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/118-principal-component-analysis-in-t-prcomp-vs-princomp/) : 
 ```{r}
-install.packages("factoextra")
-library(factoextra)
 fviz_eig(pca) #shows percentage explained by each PC
 
 #plot of cell lines with gradient colors by the quality of representation
