@@ -12,20 +12,20 @@ knitr::opts_chunk$set(echo = TRUE)
 #Project 2 Group 4
 ## von Anna, Ann-Sophie und Jana
 
-über colnames schauen, wo erlotinib: 249 - 307
+new dataframe with only erlotinib columns: 249 - 307
 ```{r }
 erlotinib_treated <- NCI_TPW_gep_treated[, 249:307]
 erlotinib_untreated <- NCI_TPW_gep_untreated[, 249:307]
 ```
 
 
-als dataframe speichern
+save as dataframe
 ```{r }
 erlotinib_treated <- as.data.frame(erlotinib_treated)
 erlotinib_untreated <- as.data.frame(erlotinib_untreated)
 ```
 
-beide zusammenfügen
+combine data of treated and untreated in one 
 ```{r }
 erlotinib_all <- cbind (erlotinib_treated, erlotinib_untreated)
 ```
@@ -40,7 +40,7 @@ color <- ifelse(colnames(erlotinib_all) == colnames(erlotinib_treated), "forestg
 plot(pca$rotation[,1], pca$rotation[,2], col = color)
 ```
 
-Z-Transormation: Median und Standardabweichung berechnen
+Z-transormation
 ```{r }
 median_gene <- apply (erlotinib_all, 1, function (x){
 + median(x) })
@@ -76,3 +76,29 @@ table_cell_lines_var_top15 <- cbind(names(cell_line_var_decreasing_top15), cell_
 rownames(table_cell_lines_var_top15) <- c(1:15)
 colnames(table_cell_lines_var_top15) <- c("cell line", "variance")
 ```
+
+PCA visualization with factoextra package: 
+```{r}
+install.packages("factoextra")
+library(factoextra)
+fviz_eig(pca) #shows percentage explained by each PC
+fviz_pca_ind(pca, col.ind = "cos2", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"))
+```
+
+PCA with transformed matrix (each dot represents a gene):
+```{r}
+transformed_erlotinib_normalized_z_transformed <- t(erlotinib_normalized_z_transformed)
+pca <- prcomp(transformed_erlotinib_normalized_z_transformed)
+plot(pca$rotation[,1], pca$rotation[,2])
+text(pca$rotation, labels = rownames(erlotinib_normalized_z_transformed), cex = 0.4, pos = 3)
+```
+
+PCA visualization with factoextra package: 
+```{r}
+install.packages("factoextra")
+library(factoextra)
+fviz_eig(pca) #shows percentage explained by each PC
+fviz_pca_ind(pca, col.ind = "cos2", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"))
+```
+
+
