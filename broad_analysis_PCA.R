@@ -1,46 +1,58 @@
-
-#PCA of all celllines and drugs
+#Broad analysis
 
 #calculate fold change due to drug treatment
 fold_changes <- NCI_TPW_gep_treated - NCI_TPW_gep_untreated
 
 #matrix annotation_of_celllines_per_drug contains all names 
-#of celllines treated with each drug in a column (15 drugs and columns)
-annotation_of_celllines_per_drug <- matrix(, nrow = 70, ncol = 0)
+#of celllines treated with each drug in a column (15 drugs, each in a seperated column containing all celllines treated with that drug)
+annotation_of_celllines_per_drug <- matrix(, nrow = 60, ncol = 0)
 as.data.frame(drug_annotation)
+
+#to cbind all celllines of one drug in the annotation matrix, they need to have the same number of rows
+#all columns are filled to 60 rows with "NA"s and before that the actual number of rows gets stored in length_without_NAs
+length_without_NAs <- c()
 
 for (i in 1:15){
   columns_of_one_drug <- c(grep (drug_annotation$Drug[i], colnames(fold_changes), value = TRUE))
-  columns_of_one_drug <- c(columns_of_one_drug, rep(NA, 70-length(columns_of_one_drug)))
+  length_without_NAs <- c(length_without_NAs, length(columns_of_one_drug))
+  columns_of_one_drug <- c(columns_of_one_drug, rep(NA, 60-length(columns_of_one_drug)))
   annotation_of_celllines_per_drug <- cbind (annotation_of_celllines_per_drug, columns_of_one_drug)
 }
 
+#sort annotation alphabetically
 colnames(annotation_of_celllines_per_drug) <- drug_annotation$Drug
+annotation_of_celllines_per_drug <- annotation_of_celllines_per_drug [ , c(8, 1, 15, 7, 4, 14, 3, 5, 11, 6, 2, 12, 10, 13, 9)]
+length_without_NAs <- length_without_NAs[c(8, 1, 15, 7, 4, 14, 3, 5, 11, 6, 2, 12, 10, 13, 9)]
+
+#define a color palette with 15 chosen colors
+color_palette <- c("aquamarine", "brown1", "forestgreen", "slategrey", "chartreuse", "darkgoldenrod1", "cadetblue","purple", "firebrick1", "deepskyblue", "gold", "violetred4", "deeppink", "plum2", "blue" )
+
+#define vector with 15 colors each assigned to one drug
+colors <- cbind(color_palette, colnames(annotation_of_celllines_per_drug))
+colnames(colors) <- c("Color", "Drug")
+
+#create vector containing each color name so often as the treated celllines with one drug
+color_vector_all_drugs <- c()
+for (i in 1:15){
+  for (j in 1:length_without_NAs[i] )
+  color_vector_all_drugs <- c(color_vector_all_drugs, colors [i, 1])
+}
+
+#Boxplot
+boxplot(NCI_TPW_gep_untreated, xlab = "Celllines treated with different drugs",ylab = "Genexpression profile",vertical =  T, boxcol = color_vector_all_drugs)
 
 #PCA
 pca <- prcomp(fold_changes)
 
-#color all erlotinib cell lines in red, rest in green
-color_palette <- rainbow(15)
-color_erlotinib <- ifelse (colnames(annotation_of_celllines_per_drug) == "erlotinib", color_palette[1], color_palette[8])
-plot(pca$rotation[,1], pca$rotation[,2], col = color_erlotinib, pch = 19, xlab = "PC1", ylab = "PC2")
-
-#define vector with 15 colors, one for each drug
-colors <- cbind(color_palette, colnames(annotation_of_celllines_per_drug))
-colnames(colors) <- c("Color", "Drug")
-
-plot(pca$rotation[,1], pca$rotation[,2], col = colors, pch = 19, xlab = "PC1", ylab = "PC2")
-
-library(RColorBrewer)
-data.frame(subset(annotation_of_celllines_per_drug, select = ,
-           matchRetVal = match(colors$Drug, colors$Color))
-for (i in 1:15){
-  if (colnames(annotation_of_celllines_per_drug) == colors[i,2]) {
-    color_all_drugs <- colors[i,1]
-  }}
+#color all celllines in PCA according to drug treatment
+par(oma = c(1, 1, 1, 8))
+plot(pca$rotation[,1], pca$rotation[,2], col = color_vector_all_drugs, pch = 19, xlab = "PC1", ylab = "PC2", main = "PCA with FC of all celllines treated with different drugs")
+legend(x = 0.08, y = 0.15, legend = colors[, 2], col = colors[, 1], pch = 19, xpd = "TRUE")
 
 
- 
+
+
+
 #of celllines treated with each drug in a column (61 cell lines)
 annotation_sorted_by_cell_lines <- matrix(, nrow = 15, ncol = 0)
 as.data.frame(cellline_annotation)
@@ -53,3 +65,5 @@ for (i in 1:61){
 }
 
 colnames(annotation_sorted_by_cell_lines) <- cellline_annotation$Cell_Line_Name
+
+
