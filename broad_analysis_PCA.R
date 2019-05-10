@@ -25,9 +25,9 @@ annotation_of_celllines_per_drug <- annotation_of_celllines_per_drug [ , c(8, 1,
 length_without_NAs <- length_without_NAs[c(8, 1, 15, 7, 4, 14, 3, 5, 11, 6, 2, 12, 10, 13, 9)]
 
 #define a color palette with 15 chosen colors
-color_palette <- c("aquamarine", "brown1", "forestgreen", "slategrey", "chartreuse", "darkgoldenrod1", "cadetblue","purple", "firebrick1", "deepskyblue", "gold", "violetred4", "deeppink", "plum2", "blue" )
+color_palette <- c("aquamarine", "brown", "forestgreen", "slategrey", "chartreuse", "darkgoldenrod1", "cadetblue","purple", "firebrick1", "deepskyblue", "gold", "violetred4", "deeppink", "plum2", "blue" )
 
-#define vector with 15 colors each assigned to one drug
+#define vector with 15 colors each assigned to one drug (needed for legend)
 colors <- cbind(color_palette, colnames(annotation_of_celllines_per_drug))
 colnames(colors) <- c("Color", "Drug")
 
@@ -52,18 +52,48 @@ legend(x = 0.08, y = 0.15, legend = colors[, 2], col = colors[, 1], pch = 19, xp
 
 
 
+#Coloring according to cancer type (9 types, see cellline_annotation$Cancer_Type)
 
-#of celllines treated with each drug in a column (61 cell lines)
+#annotation of celllines (in columns 61 cell lines) treated with drugs (in rows 15 drugs)
 annotation_sorted_by_cell_lines <- matrix(, nrow = 15, ncol = 0)
-as.data.frame(cellline_annotation)
 
-names (cellline_annotation$Cell_Line_Name[33]) <- "SK-MEL_2_"
+#Problem: name of cellline SK-MEL_2 is part of cellline SK-MEL_28
+#Solution: rename SK-MEL_2 to SK-MEL_2_ (first define it as new factor level)
+levels(cellline_annotation$Cell_Line_Name) <- c(levels(cellline_annotation$Cell_Line_Name), "SK-MEL_2_")
+cellline_annotation[33, 1] <- "SK-MEL_2_"
+
+#problem: grep does not find SK-MEL_2_ in colnames --> creates column of NAs instead of values in SK-MEL_2 column
+length_without_NAs <- c()
 for (i in 1:61){
   columns_of_one_cell_line <- c(grep (cellline_annotation$Cell_Line_Name[i], colnames(fold_changes), value = TRUE))
+  length_without_NAs <- c(length_without_NAs, length(columns_of_one_cell_line))
   columns_of_one_cell_line <- c(columns_of_one_cell_line, rep(NA, 15-length(columns_of_one_cell_line)))
   annotation_sorted_by_cell_lines <- cbind (annotation_sorted_by_cell_lines, columns_of_one_cell_line)
 }
-
 colnames(annotation_sorted_by_cell_lines) <- cellline_annotation$Cell_Line_Name
 
+#define vector with 9 colors each assigned to one cancer type
+cancertypes <- c()
+for (i in 1:61){
+  cancertypes <- union(cancertypes, cellline_annotation$Cancer_type[i])
+}
+colors_cancertype <- cbind(color_palette[1:9], cancertypes)
+colnames(colors) <- c("Color", "Cancertypes")
 
+#create vector containing color names according to cancer type 
+color_vector_cancertype <- c()
+for (i in 1:61){ #for each cell line
+  for (j in 1:9){ #for each cancer type
+    if (cellline_annotation$Cancer_type[i] == cancertypes[j]){
+      for (k in 1:length_without_NAs[i]){ #add color so often as stored in legth (number of drugs tested on this cellline)
+        color_vector_cancertype <- c(color_vector_cancertype, colors_cancertype [j, 1])
+      }
+    }
+  }
+}
+
+#Color PCA according to cancertype
+pca <- prcomp(fold_changes)
+par(oma = c(1, 1, 1, 10))
+plot(pca$rotation[,3], pca$rotation[,4], col = color_vector_cancertype, pch = 19, xlab = "PC3", ylab = "PC4", main = "PCA with FC of all celllines treated with different drugs")
+legend(x = 0.11, y = 0.1, legend = colors_cancertype[, 2], col = colors_cancertype[, 1], pch = 19, xpd = "TRUE")
