@@ -1,0 +1,75 @@
+#new dataframe with only erlotinib columns: 249 - 307
+erlotinib_treated <- NCI_TPW_gep_treated[, 249:307]
+erlotinib_untreated <- NCI_TPW_gep_untreated[, 249:307]
+
+#save as dataframe
+erlotinib_treated <- as.data.frame(erlotinib_treated)
+erlotinib_untreated <- as.data.frame(erlotinib_untreated)
+
+#combine data of treated and untreated in one 
+erlotinib_all <- cbind (erlotinib_treated, erlotinib_untreated)
+
+#Principal component analysis
+pca <- prcomp(erlotinib_all)
+plot(pca, type = "l")
+
+color <- ifelse(colnames(erlotinib_all) == colnames(erlotinib_treated), "forestgreen", "firebrick")
+plot(pca$rotation[,1], pca$rotation[,2], col = color)
+
+
+#Z-transormation
+median_gene <- apply (erlotinib_all, 1, function (x){
+  + median(x) })
+median(median_gene)
+sd_gene <- apply(erlotinib_all, 1, function (x){
+  + sd(x) })
+sd (sd_gene)
+erlotinib_all_z_transformed <- (erlotinib_all-median(median_gene)) / sd(sd_gene)
+
+#erlotinib_normalized_z_transformed: treated-untreated + z-Transformation + PCA 
+erlotinib_normalized <- erlotinib_treated - erlotinib_untreated
+median_gene <- apply (erlotinib_normalized, 1, function (x){
+  + median(x) })
+sd_gene <- apply(erlotinib_normalized, 1, function (x){
+  + sd(x) })
+erlotinib_normalized_z_transformed <- (erlotinib_normalized-median(median_gene)) / sd(sd_gene)
+
+pca <- prcomp(erlotinib_normalized_z_transformed)
+plot(pca$rotation[,1], pca$rotation[,2])
+
+
+#select cell lines with highest variance
+var_cell_line <- apply(erlotinib_normalized_z_transformed, 2, function (x) {
+  + var(x)})
+cell_line_var_greater_75quantile <- var_cell_line [which (var_cell_line > quantile(var_cell_line,0.75))]
+cell_line_var_decreasing_top15 <- sort(cell_line_var_greater_75quantile, decreasing = TRUE)
+
+table_cell_lines_var_top15 <- cbind(names(cell_line_var_decreasing_top15), cell_line_var_decreasing_top15)
+rownames(table_cell_lines_var_top15) <- c(1:15)
+colnames(table_cell_lines_var_top15) <- c("cell line", "variance")
+#kable(): simple table formatting function
+kable(table_cell_lines_var_top15)
+
+
+#PCA visualization with factoextra package: 
+fviz_eig(pca) #shows percentage explained by each PC
+fviz_pca_ind(pca, col.ind = "cos2", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"))
+
+#PCA with transformed matrix (each dot represents a gene):
+transformed_erlotinib_normalized_z_transformed <- t(erlotinib_normalized_z_transformed)
+pca <- prcomp(transformed_erlotinib_normalized_z_transformed)
+plot(pca$rotation[,1], pca$rotation[,2])
+text(pca$rotation, labels = rownames(erlotinib_normalized_z_transformed), cex = 0.4, pos = 3)
+
+#PCA visualization with factoextra package (according to www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/118-principal-component-analysis-in-t-prcomp-vs-princomp/) : 
+fviz_eig(pca) #shows percentage explained by each PC
+
+#plot of cell lines with gradient colors by the quality of representation
+fviz_pca_ind(pca, col.ind = "cos2", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"))
+
+#plot of genes showing their contribution
+fviz_pca_var(pca, col.var ="contrib", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"))
+
+#get contribution of genes to the PCs
+results.genes <- get_pca_var(pca)
+genes_pca_highest_contribution <- results.genes$contrib

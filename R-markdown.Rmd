@@ -11,7 +11,6 @@ output:
 ```{r, include=FALSE}
 #Load required packages
 library(knitr)
-library(factoextra)
 ```
 
 ```{r setup, include=FALSE} 
@@ -21,7 +20,8 @@ knitr::opts_chunk$set(cache = TRUE)
 ```
 
 
-Load data
+## Load data
+
 ```{r }
 NCI_TPW_gep_treated <- readRDS(url("https://ndownloader.figshare.com/files/14720180?private_link=db1411debcfbe2618d2f"))
 NCI_TPW_gep_untreated <- readRDS(url("https://ndownloader.figshare.com/files/14720183?private_link=db1411debcfbe2618d2f"))
@@ -34,99 +34,69 @@ cellline_annotation <-read.delim("https://ndownloader.figshare.com/files/1476898
 drug_annotation <- read.delim("https://ndownloader.figshare.com/files/14768984?private_link=efb6a529eaf2d4dc6432")
 ```
 
+# 1. Broad analysis
 
-new dataframe with only erlotinib columns: 249 - 307
+**Calculate fold change** due to drug treatment
 ```{r }
-erlotinib_treated <- NCI_TPW_gep_treated[, 249:307]
-erlotinib_untreated <- NCI_TPW_gep_untreated[, 249:307]
+fold_changes <- NCI_TPW_gep_treated - NCI_TPW_gep_untreated
 ```
 
-save as dataframe
+**Matrix annotation_of_celllines_per_drug** contains all names of celllines treated with each drug in a column (15 drugs, each in a seperated column containing all celllines treated with that drug)
 ```{r }
-erlotinib_treated <- as.data.frame(erlotinib_treated)
-erlotinib_untreated <- as.data.frame(erlotinib_untreated)
+annotation_of_celllines_per_drug <- matrix(, nrow = 60, ncol = 0)
+
+#to cbind all celllines of one drug in the annotation matrix, they need to have the same number of rows all columns #are filled to 60 rows with "NA"s and before that the actual number of rows gets stored in length_without_NAs
+
+length_without_NAs <- c()
+
+for (i in 1:15){
+  columns_of_one_drug <- c(grep (drug_annotation$Drug[i], colnames(fold_changes), value = TRUE))
+  length_without_NAs <- c(length_without_NAs, length(columns_of_one_drug))
+  columns_of_one_drug <- c(columns_of_one_drug, rep(NA, 60-length(columns_of_one_drug)))
+  annotation_of_celllines_per_drug <- cbind (annotation_of_celllines_per_drug, columns_of_one_drug)
+}
+
+#sort annotation alphabetically
+colnames(annotation_of_celllines_per_drug) <- drug_annotation$Drug
+annotation_of_celllines_per_drug <- annotation_of_celllines_per_drug [ , c(8, 1, 15, 7, 4, 14, 3, 5, 11, 6, 2, 12, 10, 13, 9)]
+length_without_NAs <- length_without_NAs[c(8, 1, 15, 7, 4, 14, 3, 5, 11, 6, 2, 12, 10, 13, 9)]
 ```
 
-combine data of treated and untreated in one 
+**Coloring**
 ```{r }
-erlotinib_all <- cbind (erlotinib_treated, erlotinib_untreated)
+#define a color palette with 15 chosen colors
+color_palette <- c("aquamarine", "brown1", "forestgreen", "slategrey", "chartreuse", "darkgoldenrod1", "cadetblue","purple", "firebrick1", "deepskyblue", "gold", "violetred4", "deeppink", "plum2", "blue" )
+
+#define vector with 15 colors each assigned to one drug
+colors <- cbind(color_palette, colnames(annotation_of_celllines_per_drug))
+colnames(colors) <- c("Color", "Drug")
+
+#create vector containing each color name so often as the treated celllines with one drug
+color_vector_all_drugs <- c()
+for (i in 1:15){
+  for (j in 1:length_without_NAs[i] )
+  color_vector_all_drugs <- c(color_vector_all_drugs, colors [i, 1])
+}
 ```
 
-Principal component analysis
+**Boxplot**
 ```{r }
-pca <- prcomp(erlotinib_all)
-plot(pca, type = "l")
-
-color <- ifelse(colnames(erlotinib_all) == colnames(erlotinib_treated), "forestgreen", "firebrick")
-plot(pca$rotation[,1], pca$rotation[,2], col = color)
+boxplot(NCI_TPW_gep_untreated, xlab = "Celllines treated with different drugs",ylab = "Genexpression profile",vertical =  T, boxcol = color_vector_all_drugs)
 ```
 
-Z-transormation
+**PCA**
 ```{r }
-median_gene <- apply (erlotinib_all, 1, function (x){
-+ median(x) })
-median(median_gene)
-sd_gene <- apply(erlotinib_all, 1, function (x){
- + sd(x) })
-sd (sd_gene)
-erlotinib_all_z_transformed <- (erlotinib_all-median(median_gene)) / sd(sd_gene)
+pca <- prcomp(fold_changes)
+
+#color all celllines in PCA according to drug treatment
+par(oma = c(1, 1, 1, 8))
+plot(pca$rotation[,1], pca$rotation[,2], col = color_vector_all_drugs, pch = 19, xlab = "PC1", ylab = "PC2", main = "PCA with FC of all celllines treated with different drugs")
+legend(x = 0.08, y = 0.15, legend = colors[, 2], col = colors[, 1], pch = 19, xpd = "TRUE")
 ```
 
-erlotinib_normalized_z_transformed: treated-untreated + z-Transformation + PCA 
-```{r }
-erlotinib_normalized <- erlotinib_treated - erlotinib_untreated
 
-median_gene <- apply (erlotinib_normalized, 1, function (x){
-+ median(x) })
-sd_gene <- apply(erlotinib_normalized, 1, function (x){
-+ sd(x) })
-erlotinib_normalized_z_transformed <- (erlotinib_normalized-median(median_gene)) / sd(sd_gene)
+# 2. Specific analysis: Erlotinib
 
-pca <- prcomp(erlotinib_normalized_z_transformed)
-plot(pca$rotation[,1], pca$rotation[,2])
-```
 
-select cell lines with highest variance
-```{r}
-var_cell_line <- apply(erlotinib_normalized_z_transformed, 2, function (x) {
-+ var(x)})
-cell_line_var_greater_75quantile <- var_cell_line [which (var_cell_line > quantile(var_cell_line,0.75))]
-cell_line_var_decreasing_top15 <- sort(cell_line_var_greater_75quantile, decreasing = TRUE)
-
-table_cell_lines_var_top15 <- cbind(names(cell_line_var_decreasing_top15), cell_line_var_decreasing_top15)
-rownames(table_cell_lines_var_top15) <- c(1:15)
-colnames(table_cell_lines_var_top15) <- c("cell line", "variance")
-#kable(): simple table formatting function
-kable(table_cell_lines_var_top15)
-```
-
-PCA visualization with factoextra package: 
-```{r}
-fviz_eig(pca) #shows percentage explained by each PC
-fviz_pca_ind(pca, col.ind = "cos2", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"))
-```
-
-PCA with transformed matrix (each dot represents a gene):
-```{r}
-transformed_erlotinib_normalized_z_transformed <- t(erlotinib_normalized_z_transformed)
-pca <- prcomp(transformed_erlotinib_normalized_z_transformed)
-plot(pca$rotation[,1], pca$rotation[,2])
-text(pca$rotation, labels = rownames(erlotinib_normalized_z_transformed), cex = 0.4, pos = 3)
-```
-
-PCA visualization with factoextra package (according to www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/118-principal-component-analysis-in-t-prcomp-vs-princomp/) : 
-```{r}
-fviz_eig(pca) #shows percentage explained by each PC
-
-#plot of cell lines with gradient colors by the quality of representation
-fviz_pca_ind(pca, col.ind = "cos2", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"))
-
-#plot of genes showing their contribution
-fviz_pca_var(pca, col.var ="contrib", gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"))
-
-#get contribution of genes to the PCs
-results.genes <- get_pca_var(pca)
-genes_pca_highest_contribution <- results.genes$contrib
-```
 
 
