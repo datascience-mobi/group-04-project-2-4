@@ -1,11 +1,11 @@
 #Broad analysis
 #calculate fold change due to drug treatment
 fold_changes <- NCI_TPW_gep_treated - NCI_TPW_gep_untreated
+fold_changes <- as.data.frame(fold_changes)
 
 #matrix annotation_of_celllines_per_drug contains all names 
 #of celllines treated with each drug in a column (15 drugs, each in a seperated column containing all celllines treated with that drug)
 annotation_of_celllines_per_drug <- matrix(, nrow = 60, ncol = 0)
-as.data.frame(drug_annotation)
 
 #to cbind all celllines of one drug in the annotation matrix, they need to have the same number of rows
 #all columns are filled to 60 rows with "NA"s and before that the actual number of rows gets stored in length_without_NAs
@@ -107,4 +107,40 @@ legend(x = 0.11, y = 0.1, legend = colors_cancertype[, 2], col = colors_cancerty
 plot(density(NCI_TPW_gep_untreated), "Density plot of gene expression")
 lines(density(NCI_TPW_gep_treated), col = "red")
 legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), pch = 15)
+
+
+#Find biomarker: 100 genes that have highest fold change for each cellline
+genes_highest_foldchange_100 <- data.frame(matrix(nrow = 100, ncol = 819)) #100 rows, for most upregulated genes, 819 columns for celllines
+gene_names_highest_foldchange_100 <- data.frame(matrix(nrow = 100, ncol = 819))
+
+for (i in 1:819){ #for all celllines
+  genes_highest_foldchange_100[, i] <- fold_changes[1:100, i]
+  gene_names_highest_foldchange_100[, i] <- rownames(fold_changes)[1:100]
+  for(j in 101:13299){ #for all genes
+    min <- min(genes_highest_foldchange_100[,i])
+    if (fold_changes[j, i] > min){
+      gene_names_highest_foldchange_100[genes_highest_foldchange_100[ , i] == min , i] <- rownames(fold_changes)[j]
+      genes_highest_foldchange_100[genes_highest_foldchange_100[ , i] == min , i] <- fold_changes[j, i]
+    }
+  }
+}
+
+counts_gene_names_highest_FC_100 <- c()
+for (i in 1:13299){#for each gene
+  counter = 0
+  for(j in 1:100){ #for each row in gene_names_highest_foldchange_100
+    for (k in 1:819){#for each column in gene_names_highest_foldchange_100
+      if (rownames(fold_changes)[i] == gene_names_highest_foldchange_100[j, k] ){
+        counter = counter + 1
+      }
+    }
+  }
+  counts_gene_names_highest_FC_100[i] <- counter
+}
+rm(counter, i, j, k)
+
+names(counts_gene_names_highest_FC_100) <- rownames(fold_changes)
+counts_gene_names_highest_FC_100 <- sort(counts_gene_names_highest_FC_100, decreasing = TRUE)
+counts_gene_names_highest_FC_100 <- counts_gene_names_highest_FC_100[-which(counts_gene_names_highest_FC_100 == 0)]
+
 
