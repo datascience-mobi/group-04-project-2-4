@@ -50,8 +50,12 @@ pca <- prcomp(fold_changes)
 
 #color all celllines in PCA according to drug treatment
 par(oma = c(1, 1, 1, 8))
+#PC1 and PC2
 plot(pca$rotation[,1], pca$rotation[,2], col = color_vector_all_drugs, pch = 19, xlab = "PC1", ylab = "PC2", main = "PCA with FC of all celllines treated with different drugs")
-legend(x = 0.08, y = 0.15, legend = colors[, 2], col = colors[, 1], pch = 19, xpd = "TRUE")
+legend(x = 0.08, y = 0.143, legend = colors[, 2], col = colors[, 1], pch = 19, xpd = "TRUE")
+#PC2 and PC3
+plot(pca$rotation[,2], pca$rotation[,3], col = color_vector_all_drugs, pch = 19, xlab = "PC2", ylab = "PC3", main = "PCA with FC of all celllines treated with different drugs")
+legend(x = 0.16, y = 0.096, legend = colors[, 2], col = colors[, 1], pch = 19, xpd = "TRUE")
 
 
 
@@ -100,13 +104,15 @@ for (i in 1:61){ #for each cell line
 pca <- prcomp(fold_changes)
 par(oma = c(1, 1, 1, 10))
 plot(pca$rotation[,3], pca$rotation[,4], col = color_vector_cancertype, pch = 19, xlab = "PC3", ylab = "PC4", main = "PCA with FC of all celllines treated with different drugs")
-legend(x = 0.11, y = 0.1, legend = colors_cancertype[, 2], col = colors_cancertype[, 1], pch = 19, xpd = "TRUE")
+legend(x = 0.11, y = 0.06, legend = colors_cancertype[, 2], col = colors_cancertype[, 1], pch = 19, xpd = "TRUE")
+
 
 
 #Density plot of all celllines and drugs, in black treated, red untreated
 plot(density(NCI_TPW_gep_untreated), "Density plot of gene expression")
 lines(density(NCI_TPW_gep_treated), col = "red")
 legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), pch = 15)
+
 
 
 #Find biomarker: 100 genes that have highest fold change for each cellline
