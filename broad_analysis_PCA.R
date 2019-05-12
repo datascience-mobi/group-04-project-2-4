@@ -1,5 +1,4 @@
 #Broad analysis
-
 #calculate fold change due to drug treatment
 fold_changes <- NCI_TPW_gep_treated - NCI_TPW_gep_untreated
 
@@ -39,7 +38,12 @@ for (i in 1:15){
 }
 
 #Boxplot
-boxplot(NCI_TPW_gep_untreated, xlab = "Celllines treated with different drugs",ylab = "Genexpression profile",vertical =  T, boxcol = color_vector_all_drugs)
+#par makes spaces outside the plot larger, xaxt: removes labels on x-axis
+#title() used to move xlab nearer to the axis
+par(oma = c(1, 1, 1, 8))
+boxplot(NCI_TPW_gep_untreated, xaxt = "n", ylab = "Gene expression profile",vertical =  T, main = "Boxplot: gene expression profile of untreated NCI60 celllines", boxcol = color_vector_all_drugs)
+title(xlab = "Celllines treated with different drugs", line = 1.0)
+legend(x = 860, y = 14.5, legend = colors[, 2], col = colors[, 1], pch = 19, xpd = "TRUE")
 
 #PCA
 pca <- prcomp(fold_changes)
@@ -97,3 +101,10 @@ pca <- prcomp(fold_changes)
 par(oma = c(1, 1, 1, 10))
 plot(pca$rotation[,3], pca$rotation[,4], col = color_vector_cancertype, pch = 19, xlab = "PC3", ylab = "PC4", main = "PCA with FC of all celllines treated with different drugs")
 legend(x = 0.11, y = 0.1, legend = colors_cancertype[, 2], col = colors_cancertype[, 1], pch = 19, xpd = "TRUE")
+
+
+#Density plot of all celllines and drugs, in black treated, red untreated
+plot(density(NCI_TPW_gep_untreated), "Density plot of gene expression")
+lines(density(NCI_TPW_gep_treated), col = "red")
+legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), pch = 15)
+
