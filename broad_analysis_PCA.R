@@ -145,8 +145,11 @@ for (i in 1:13299){#for each gene
 }
 rm(counter, i, j, k)
 
+#Name the counts with the genenames, sort them by starting with highest and delete all genes that did not occur
 names(counts_gene_names_highest_FC_100) <- rownames(fold_changes)
 counts_gene_names_highest_FC_100 <- sort(counts_gene_names_highest_FC_100, decreasing = TRUE)
 counts_gene_names_highest_FC_100 <- counts_gene_names_highest_FC_100[-which(counts_gene_names_highest_FC_100 == 0)]
 
-
+#Barplot of genes showing how often their fold change is in the top 100
+barplot(counts_gene_names_highest_FC_100[1:20], main = "Most upregulated genes", xlab = "Genes", xaxt = "n", ylab = "Counts (top100 FC)")
+text(x = barplot[,1], y = -50, labels = names(counts_gene_names_highest_FC_100)[1:20], xpd = TRUE, cex = 1, srt = 60)
