@@ -1,4 +1,7 @@
 #Broad analysis
+#install package plyr
+library(plyr)
+
 #calculate fold change due to drug treatment
 fold_changes <- NCI_TPW_gep_treated - NCI_TPW_gep_untreated
 fold_changes <- as.data.frame(fold_changes)
@@ -153,3 +156,22 @@ counts_gene_names_highest_FC_100 <- counts_gene_names_highest_FC_100[-which(coun
 #Barplot of genes showing how often their fold change is in the top 100
 barplot(counts_gene_names_highest_FC_100[1:20], main = "Most upregulated genes", xlab = "Genes", xaxt = "n", ylab = "Counts (top100 FC)")
 text(x = barplot[,1], y = -50, labels = names(counts_gene_names_highest_FC_100)[1:20], xpd = TRUE, cex = 1, srt = 60)
+
+
+#Biomarkers for each cancer type seperately
+mean_FC_cancertype <- matrix(nrow = 13299, ncol = 9)
+cancertypes_sorted_to_FC_columns <- data.frame(matrix(nrow = 105, ncol = 9))
+
+for (j in 1:9){ #for each cancer type
+   for (i in 1:61){ #for each cell line
+      if (cellline_annotation$Cancer_type[i] == cancertypes[j]){
+        cancertypes_sorted_to_FC_columns[, j] <- rbind.data.frame(annotation_sorted_by_cell_lines[ , i])
+    }
+  }
+}
+
+for (i in 1:9){ #for each cancer type
+  for (j in 1:13299){ #for each gene
+    mean_FC_cancertype[j, i] <- mean(fold_changes[j, ])
+  }
+}
