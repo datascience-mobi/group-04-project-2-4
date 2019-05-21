@@ -158,6 +158,18 @@ barplot(counts_gene_names_highest_FC_100[1:20], main = "Most upregulated genes",
 text(x = barplot[,1], y = -50, labels = names(counts_gene_names_highest_FC_100)[1:20], xpd = TRUE, cex = 1, srt = 60)
 
 
+#Barplot of genes with highest median FC over all samples
+mean_FC <- c()
+for (i in  1:13299){ #calculate mean for each gene
+  mean_FC[i] <- mean(fold_changes[i, ])
+}
+names(mean_FC) <- rownames(fold_changes)
+mean_FC <- abs(mean_FC) #makes all negative values positive
+mean_FC <- sort(mean_FC, decreasing = TRUE)
+par(oma = c(10, 1, 1, 1))
+barplot(mean_FC[1:20], main = "Genes with highest mean FC",  ylab = "mean FC", las = 2) #las = 2: vertical x labels
+
+
 #Biomarkers for each cancer type seperately
 mean_FC_cancertype <- matrix(nrow = 13299, ncol = 9)
 cancertypes_sorted_to_FC_columns <- data.frame(matrix(nrow = 105, ncol = 9))
