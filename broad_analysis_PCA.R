@@ -1,10 +1,16 @@
 #Broad analysis
-#install package plyr
-library(plyr)
 
 #calculate fold change due to drug treatment
 fold_changes <- NCI_TPW_gep_treated - NCI_TPW_gep_untreated
 fold_changes <- as.data.frame(fold_changes)
+
+#add drug, cellline and cancertype annotation in FC
+drugs <- levels(drug_annotation$Drug)
+drugs_samples <- apply(fold_changes, 2, function(x){
+  sapply(drug_annotation$Drug, function(y){
+    grepl(drugs [y], colnames(fold_changes)[x])
+  })
+})
 
 #matrix annotation_of_celllines_per_drug contains all names 
 #of celllines treated with each drug in a column (15 drugs, each in a seperated column containing all celllines treated with that drug)
@@ -14,7 +20,7 @@ annotation_of_celllines_per_drug <- matrix(, nrow = 60, ncol = 0)
 #all columns are filled to 60 rows with "NA"s and before that the actual number of rows gets stored in length_without_NAs
 length_without_NAs <- c()
 
-for (i in 1:15){
+for (i in 1:nrow(drug_annotation)){
   columns_of_one_drug <- c(grep (drug_annotation$Drug[i], colnames(fold_changes), value = TRUE))
   length_without_NAs <- c(length_without_NAs, length(columns_of_one_drug))
   columns_of_one_drug <- c(columns_of_one_drug, rep(NA, 60-length(columns_of_one_drug)))
@@ -23,8 +29,8 @@ for (i in 1:15){
 
 #sort annotation alphabetically
 colnames(annotation_of_celllines_per_drug) <- drug_annotation$Drug
-annotation_of_celllines_per_drug <- annotation_of_celllines_per_drug [ , c(8, 1, 15, 7, 4, 14, 3, 5, 11, 6, 2, 12, 10, 13, 9)]
-length_without_NAs <- length_without_NAs[c(8, 1, 15, 7, 4, 14, 3, 5, 11, 6, 2, 12, 10, 13, 9)]
+annotation_of_celllines_per_drug <- annotation_of_celllines_per_drug[, order(colnames(annotation_of_celllines_per_drug))]
+length_without_NAs <- length_without_NAs[order(colnames(annotation_of_celllines_per_drug))]
 
 #define a color palette with 15 chosen colors
 color_palette <- c("aquamarine", "brown", "forestgreen", "slategrey", "chartreuse", "darkgoldenrod1", "cadetblue","purple", "firebrick1", "deepskyblue", "gold", "violetred4", "deeppink", "plum2", "blue" )
