@@ -4,13 +4,6 @@
 fold_changes <- NCI_TPW_gep_treated - NCI_TPW_gep_untreated
 fold_changes <- as.data.frame(fold_changes)
 
-#add drug, cellline and cancertype annotation in FC
-drugs <- levels(drug_annotation$Drug)
-drugs_samples <- apply(fold_changes, 2, function(x){
-  sapply(drug_annotation$Drug, function(y){
-    grepl(drugs [y], colnames(fold_changes)[x])
-  })
-})
 
 #matrix annotation_of_celllines_per_drug contains all names 
 #of celllines treated with each drug in a column (15 drugs, each in a seperated column containing all celllines treated with that drug)
@@ -32,6 +25,49 @@ colnames(annotation_of_celllines_per_drug) <- drug_annotation$Drug
 annotation_of_celllines_per_drug <- annotation_of_celllines_per_drug[, order(colnames(annotation_of_celllines_per_drug))]
 length_without_NAs <- length_without_NAs[order(colnames(annotation_of_celllines_per_drug))]
 
+
+#annotation of celllines (in columns 61 cell lines) treated with drugs (in rows 15 drugs)
+annotation_sorted_by_cell_lines <- matrix(, nrow = 15, ncol = 0)
+
+#Problem: name of cellline SK-MEL_2 is part of cellline SK-MEL_28
+#Solution: rename SK-MEL_2 to SK-MEL_2_ (first define it as new factor level)
+levels(cellline_annotation$Cell_Line_Name) <- c(levels(cellline_annotation$Cell_Line_Name), "SK-MEL_2_")
+cellline_annotation[33, 1] <- "SK-MEL_2_"
+
+#problem: grep does not find SK-MEL_2_ in colnames --> creates column of NAs instead of values in SK-MEL_2 column
+length_without_NAs <- c()
+for (i in 1:61){
+  columns_of_one_cell_line <- c(grep (cellline_annotation$Cell_Line_Name[i], colnames(fold_changes), value = TRUE))
+  length_without_NAs <- c(length_without_NAs, length(columns_of_one_cell_line))
+  columns_of_one_cell_line <- c(columns_of_one_cell_line, rep(NA, 15-length(columns_of_one_cell_line)))
+  annotation_sorted_by_cell_lines <- cbind (annotation_sorted_by_cell_lines, columns_of_one_cell_line)
+}
+colnames(annotation_sorted_by_cell_lines) <- cellline_annotation$Cell_Line_Name
+
+
+
+#add drug, cellline and cancertype annotation in FC
+drugs <- sapply(colnames(fold_changes), function(x){
+  #arr.ind array indices are returned(row and col), [2] because we want to know in which col
+  colnames(annotation_of_celllines_per_drug)[which(x == annotation_of_celllines_per_drug, arr.ind = TRUE)[2]]
+})
+
+cellline <- sapply(colnames(fold_changes), function(x){
+  colnames(annotation_sorted_by_cell_lines)[which(x == annotation_sorted_by_cell_lines, arr.ind = TRUE)[2]]
+})
+
+fold_changes <- rbind("Drug" = drugs, "Cellline" = cellline, fold_changes)
+
+cancertype <- lapply(fold_changes[2, ], function(x){ #2nd row contains cellline annotation of samples
+  cellline_annotation$Cancer_type[cellline_annotation$Cell_Line_Name == x]
+})
+
+fold_changes <- rbind("Cancertype" = cancertype, fold_changes)
+rm(drugs, cellline, cancertype)
+
+
+
+
 #define a color palette with 15 chosen colors
 color_palette <- c("aquamarine", "brown", "forestgreen", "slategrey", "chartreuse", "darkgoldenrod1", "cadetblue","purple", "firebrick1", "deepskyblue", "gold", "violetred4", "deeppink", "plum2", "blue" )
 
@@ -45,6 +81,7 @@ for (i in 1:15){
   for (j in 1:length_without_NAs[i] )
   color_vector_all_drugs <- c(color_vector_all_drugs, colors [i, 1])
 }
+
 
 #Boxplot
 #par makes spaces outside the plot larger, xaxt: removes labels on x-axis
@@ -68,26 +105,7 @@ legend(x = 0.16, y = 0.096, legend = colors[, 2], col = colors[, 1], pch = 19, x
 
 
 
-
 #Coloring according to cancer type (9 types, see cellline_annotation$Cancer_Type)
-
-#annotation of celllines (in columns 61 cell lines) treated with drugs (in rows 15 drugs)
-annotation_sorted_by_cell_lines <- matrix(, nrow = 15, ncol = 0)
-
-#Problem: name of cellline SK-MEL_2 is part of cellline SK-MEL_28
-#Solution: rename SK-MEL_2 to SK-MEL_2_ (first define it as new factor level)
-levels(cellline_annotation$Cell_Line_Name) <- c(levels(cellline_annotation$Cell_Line_Name), "SK-MEL_2_")
-cellline_annotation[33, 1] <- "SK-MEL_2_"
-
-#problem: grep does not find SK-MEL_2_ in colnames --> creates column of NAs instead of values in SK-MEL_2 column
-length_without_NAs <- c()
-for (i in 1:61){
-  columns_of_one_cell_line <- c(grep (cellline_annotation$Cell_Line_Name[i], colnames(fold_changes), value = TRUE))
-  length_without_NAs <- c(length_without_NAs, length(columns_of_one_cell_line))
-  columns_of_one_cell_line <- c(columns_of_one_cell_line, rep(NA, 15-length(columns_of_one_cell_line)))
-  annotation_sorted_by_cell_lines <- cbind (annotation_sorted_by_cell_lines, columns_of_one_cell_line)
-}
-colnames(annotation_sorted_by_cell_lines) <- cellline_annotation$Cell_Line_Name
 
 #define vector with 9 colors each assigned to one cancer type
 cancertypes <- c()
