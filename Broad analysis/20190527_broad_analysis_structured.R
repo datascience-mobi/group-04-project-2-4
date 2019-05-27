@@ -2,8 +2,8 @@
 
 #calculate fold change
 fold_changes <- NCI_TPW_gep_treated - NCI_TPW_gep_untreated
-fold_changes <- as.data.frame(fold_changes)
 fold_change_numbers <- fold_changes #in fold_changes annotation is added, original is needed for calculations
+fold_changes <- as.data.frame(fold_changes)
 
 
 #1. annotation of samples by drug (annotation_of_celllines_per_drug) 
@@ -167,3 +167,13 @@ for (i in 1:9){ #for each cancer type
   }
 }
 "
+
+#Boxplot showed batch effect --> we have to normalize the data
+# each sample should have mean 0 and sd 1
+FC_normalized <- apply(fold_change_numbers, 2, function(x){
+  (x - mean(x)) / sd(x)
+})
+
+boxplot(FC_normalized, xaxt = "n", ylab = "Fold changes", vertical =  T, 
+        main = "Boxplot: fold change distribution after normalization")
+
