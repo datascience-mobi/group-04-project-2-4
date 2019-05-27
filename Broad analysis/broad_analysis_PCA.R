@@ -1,47 +1,47 @@
 #Broad analysis
 
-#calculate fold change due to drug treatment
+#calculate fold change
 fold_changes <- NCI_TPW_gep_treated - NCI_TPW_gep_untreated
 fold_changes <- as.data.frame(fold_changes)
+fold_change_numbers <- fold_changes #in fold_changes annotation is added, original is needed for calculations
 
 
-#matrix annotation_of_celllines_per_drug contains all names 
-#of celllines treated with each drug in a column (15 drugs, each in a seperated column containing all celllines treated with that drug)
+#1. annotation of samples by drug (annotation_of_celllines_per_drug) 
+#contains samples treated with one drug in a column (15 drugs = columns)
 annotation_of_celllines_per_drug <- matrix(, nrow = 60, ncol = 0)
 
 #to cbind all celllines of one drug in the annotation matrix, they need to have the same number of rows
-#all columns are filled to 60 rows with "NA"s and before that the actual number of rows gets stored in length_without_NAs
-length_without_NAs <- c()
+#all columns are filled to 60 rows with "NA"s 
 
 for (i in 1:nrow(drug_annotation)){
   columns_of_one_drug <- c(grep (drug_annotation$Drug[i], colnames(fold_changes), value = TRUE))
-  length_without_NAs <- c(length_without_NAs, length(columns_of_one_drug))
+  #fill with NAs to 60
   columns_of_one_drug <- c(columns_of_one_drug, rep(NA, 60-length(columns_of_one_drug)))
   annotation_of_celllines_per_drug <- cbind (annotation_of_celllines_per_drug, columns_of_one_drug)
 }
+rm(i, columns_of_one_drug)
 
-#sort annotation alphabetically
+#name and sort annotation alphabetically
 colnames(annotation_of_celllines_per_drug) <- drug_annotation$Drug
 annotation_of_celllines_per_drug <- annotation_of_celllines_per_drug[, order(colnames(annotation_of_celllines_per_drug))]
-length_without_NAs <- length_without_NAs[order(colnames(annotation_of_celllines_per_drug))]
 
 
-#annotation of celllines (in columns 61 cell lines) treated with drugs (in rows 15 drugs)
+#2. annotation of samples by cellline
+#61 columns = cell lines
 annotation_sorted_by_cell_lines <- matrix(, nrow = 15, ncol = 0)
 
 #Problem: name of cellline SK-MEL_2 is part of cellline SK-MEL_28
-#Solution: rename SK-MEL_2 to SK-MEL_2_ (first define it as new factor level)
-levels(cellline_annotation$Cell_Line_Name) <- c(levels(cellline_annotation$Cell_Line_Name), "SK-MEL_2_")
-cellline_annotation[33, 1] <- "SK-MEL_2_"
+#Solution: rename SK-MEL-2 to SK-MEL-2_ (first define it as new factor level)
+levels(cellline_annotation$Cell_Line_Name) <- c(levels(cellline_annotation$Cell_Line_Name), "SK-MEL-2_")
+cellline_annotation[33, 1] <- "SK-MEL-2_"
 
-#problem: grep does not find SK-MEL_2_ in colnames --> creates column of NAs instead of values in SK-MEL_2 column
-length_without_NAs <- c()
 for (i in 1:61){
   columns_of_one_cell_line <- c(grep (cellline_annotation$Cell_Line_Name[i], colnames(fold_changes), value = TRUE))
-  length_without_NAs <- c(length_without_NAs, length(columns_of_one_cell_line))
+  #fill with NAs to 15
   columns_of_one_cell_line <- c(columns_of_one_cell_line, rep(NA, 15-length(columns_of_one_cell_line)))
   annotation_sorted_by_cell_lines <- cbind (annotation_sorted_by_cell_lines, columns_of_one_cell_line)
 }
+rm(i, columns_of_one_cell_line)
 colnames(annotation_sorted_by_cell_lines) <- cellline_annotation$Cell_Line_Name
 
 
@@ -58,81 +58,68 @@ cellline <- sapply(colnames(fold_changes), function(x){
 
 fold_changes <- rbind("Drug" = drugs, "Cellline" = cellline, fold_changes)
 
-cancertype <- lapply(fold_changes[2, ], function(x){ #2nd row contains cellline annotation of samples
+cancertype <- sapply(fold_changes[2, ], function(x){ #2nd row contains cellline annotation of samples
   cellline_annotation$Cancer_type[cellline_annotation$Cell_Line_Name == x]
 })
+cancertype <- as.vector(unlist(cancertype))
 
 fold_changes <- rbind("Cancertype" = cancertype, fold_changes)
 rm(drugs, cellline, cancertype)
 
 
 
+#Coloring: 1. drug (color_vector_all_drugs), 2. cancertype (color_vector_cancertype)
+#1. define a color palette with 15 chosen colors
+color_palette_drug <- c("aquamarine", "brown", "forestgreen", "slategrey", "chartreuse", "darkgoldenrod1", "cadetblue","purple", "firebrick1", "deepskyblue", "gold", "violetred4", "deeppink", "plum2", "blue" )
+names(color_palette_drug) <- colnames(annotation_of_celllines_per_drug)
+  
+#create vector containing a color name for each sample according to drug
+color_vector_drug <- sapply(colnames(fold_changes), function(x){
+  unname(color_palette_drug[fold_changes[2, x]]) #unname: only color without drug is stored, 2nd row of FC contains drug
+})
 
-#define a color palette with 15 chosen colors
-color_palette <- c("aquamarine", "brown", "forestgreen", "slategrey", "chartreuse", "darkgoldenrod1", "cadetblue","purple", "firebrick1", "deepskyblue", "gold", "violetred4", "deeppink", "plum2", "blue" )
+#2. define a color palette with 9 chosen colors
+color_palette_cancertype <- c("aquamarine", "brown", "forestgreen", "chartreuse", "darkgoldenrod1", "cadetblue","purple", "firebrick1", "deepskyblue")
+names(color_palette_cancertype) <- levels(cellline_annotation$Cancer_type)
 
-#define vector with 15 colors each assigned to one drug (needed for legend)
-colors <- cbind(color_palette, colnames(annotation_of_celllines_per_drug))
-colnames(colors) <- c("Color", "Drug")
+#create vector containing a color name for each sample according to cancertype
+color_vector_cancertype <- sapply(colnames(fold_changes), function(x){
+  unname(color_palette_cancertype[fold_changes[1, x]]) #1st row of FC contains cancertype 
+})
 
-#create vector containing each color name so often as the treated celllines with one drug
-color_vector_all_drugs <- c()
-for (i in 1:15){
-  for (j in 1:length_without_NAs[i] )
-  color_vector_all_drugs <- c(color_vector_all_drugs, colors [i, 1])
-}
 
 
 #Boxplot
 #par makes spaces outside the plot larger, xaxt: removes labels on x-axis
 #title() used to move xlab nearer to the axis
 par(oma = c(1, 1, 1, 8))
-boxplot(NCI_TPW_gep_untreated, xaxt = "n", ylab = "Gene expression profile",vertical =  T, main = "Boxplot: gene expression profile of untreated NCI60 celllines", boxcol = color_vector_all_drugs)
+boxplot(NCI_TPW_gep_untreated, xaxt = "n", ylab = "Gene expression profile", vertical =  T, 
+        main = "Boxplot: gene expression profile of untreated NCI60 celllines", 
+        boxcol = color_vector_drug)
 title(xlab = "Celllines treated with different drugs", line = 1.0)
-legend(x = 860, y = 14.5, legend = colors[, 2], col = colors[, 1], pch = 19, xpd = "TRUE")
+legend(x = 860, y = 14.5, legend = names(color_palette_drug), col = color_palette_drug, pch = 19, xpd = "TRUE")
+
+
 
 #PCA
-pca <- prcomp(fold_changes)
+pca <- prcomp(fold_change_numbers)
 
-#color all celllines in PCA according to drug treatment
+#color PCA according to drug 
 par(oma = c(1, 1, 1, 8))
 #PC1 and PC2
-plot(pca$rotation[,1], pca$rotation[,2], col = color_vector_all_drugs, pch = 19, xlab = "PC1", ylab = "PC2", main = "PCA with FC of all celllines treated with different drugs")
-legend(x = 0.08, y = 0.143, legend = colors[, 2], col = colors[, 1], pch = 19, xpd = "TRUE")
+plot(pca$rotation[,1], pca$rotation[,2], col = color_vector_drug, pch = 19, xlab = "PC1", ylab = "PC2", main = "PCA with FC of all samples")
+legend(x = 0.08, y = 0.143, legend = names(color_palette_drug), col = color_palette_drug, pch = 19, xpd = "TRUE")
 #PC2 and PC3
-plot(pca$rotation[,2], pca$rotation[,3], col = color_vector_all_drugs, pch = 19, xlab = "PC2", ylab = "PC3", main = "PCA with FC of all celllines treated with different drugs")
-legend(x = 0.16, y = 0.096, legend = colors[, 2], col = colors[, 1], pch = 19, xpd = "TRUE")
-
-
-
-#Coloring according to cancer type (9 types, see cellline_annotation$Cancer_Type)
-
-#define vector with 9 colors each assigned to one cancer type
-cancertypes <- c()
-for (i in 1:61){
-  cancertypes <- union(cancertypes, cellline_annotation$Cancer_type[i])
-}
-colors_cancertype <- cbind(color_palette[1:9], cancertypes)
-colnames(colors) <- c("Color", "Cancertypes")
-
-#create vector containing color names according to cancer type 
-color_vector_cancertype <- c()
-for (i in 1:61){ #for each cell line
-  for (j in 1:9){ #for each cancer type
-    if (cellline_annotation$Cancer_type[i] == cancertypes[j]){
-      for (k in 1:length_without_NAs[i]){ #add color so often as stored in legth (number of drugs tested on this cellline)
-        color_vector_cancertype <- c(color_vector_cancertype, colors_cancertype [j, 1])
-      }
-    }
-  }
-}
+plot(pca$rotation[,2], pca$rotation[,3], col = color_vector_drug, pch = 19, xlab = "PC2", ylab = "PC3", main = "PCA with FC of all samples")
+legend(x = 0.16, y = 0.096, legend = names(color_palette_drug), col = color_palette_drug, pch = 19, xpd = "TRUE")
 
 #Color PCA according to cancertype
-pca <- prcomp(fold_changes)
 par(oma = c(1, 1, 1, 10))
-plot(pca$rotation[,3], pca$rotation[,4], col = color_vector_cancertype, pch = 19, xlab = "PC3", ylab = "PC4", main = "PCA with FC of all celllines treated with different drugs")
-legend(x = 0.11, y = 0.06, legend = colors_cancertype[, 2], col = colors_cancertype[, 1], pch = 19, xpd = "TRUE")
+#PC3 and PC4
+plot(pca$rotation[,3], pca$rotation[,4], col = color_vector_cancertype, pch = 19, xlab = "PC3", ylab = "PC4", main = "PCA with FC of all samples")
+legend(x = 0.11, y = 0.06, legend = names(color_palette_cancertype), col = color_palette_cancertype, pch = 19, xpd = "TRUE")
 
+rm(pca)
 
 
 #Density plot of all celllines and drugs, in black treated, red untreated
@@ -142,6 +129,7 @@ legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), 
 
 
 
+" complete block can be deleted
 #Find biomarker: 100 genes that have highest fold change for each cellline
 genes_highest_foldchange_100 <- data.frame(matrix(nrow = 100, ncol = 819)) #100 rows, for most upregulated genes, 819 columns for celllines
 gene_names_highest_foldchange_100 <- data.frame(matrix(nrow = 100, ncol = 819))
@@ -180,21 +168,30 @@ counts_gene_names_highest_FC_100 <- counts_gene_names_highest_FC_100[-which(coun
 #Barplot of genes showing how often their fold change is in the top 100
 barplot(counts_gene_names_highest_FC_100[1:20], main = "Most upregulated genes", xlab = "Genes", xaxt = "n", ylab = "Counts (top100 FC)")
 text(x = barplot[,1], y = -50, labels = names(counts_gene_names_highest_FC_100)[1:20], xpd = TRUE, cex = 1, srt = 60)
+"
 
 
-#Barplot of genes with highest median FC over all samples
-mean_FC <- c()
-for (i in  1:13299){ #calculate mean for each gene
-  mean_FC[i] <- mean(fold_changes[i, ])
-}
-names(mean_FC) <- rownames(fold_changes)
-mean_FC <- abs(mean_FC) #makes all negative values positive
-mean_FC <- sort(mean_FC, decreasing = TRUE)
+#Barplot of genes with highest mean FC over all samples
+mean_FC <- apply(fold_change_numbers, 1, mean)
+
+#sort: starting with highest mean FC, abs() makes all negative values positive
+mean_FC <- sort(abs(mean_FC), decreasing = TRUE)
 par(oma = c(10, 1, 1, 1))
 barplot(mean_FC[1:20], main = "Genes with highest mean FC",  ylab = "mean FC", las = 2) #las = 2: vertical x labels
 
+#alternative: calculating the mean FC over positive FC values
+mean_FC <- apply(fold_change_numbers, 1, function(x){
+  mean(abs(x)) 
+})
+par(oma = c(10, 1, 1, 1))
+barplot(sort(mean_FC, decreasing = TRUE) [1:20], main = "Genes with highest mean FC",  ylab = "mean FC", las = 2)
+#--> Result: nearly the same genes (little change in order) with directly calculating the mean or calculating 
+#the mean of positive FC values
 
-#Biomarkers for each cancer type seperately
+
+
+#TO DO:
+"#Biomarkers for each cancer type seperately
 mean_FC_cancertype <- matrix(nrow = 13299, ncol = 9)
 cancertypes_sorted_to_FC_columns <- data.frame(matrix(nrow = 105, ncol = 9))
 
@@ -211,3 +208,4 @@ for (i in 1:9){ #for each cancer type
     mean_FC_cancertype[j, i] <- mean(fold_changes[j, ])
   }
 }
+"
