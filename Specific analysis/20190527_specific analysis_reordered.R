@@ -50,11 +50,19 @@ genes_pca_highest_contribution <- results.genes$contrib '
 
 
 #mean of gene expression of each gene over all cell lines
-e_treated_mean_over_cell_lines <- rowMeans(e_treated)
-e_untreated_mean_over_cell_lines <- rowMeans(e_untreated)
+'e_treated_mean_over_cell_lines <- rowMeans(e_treated)
+e_untreated_mean_over_cell_lines <- rowMeans(e_untreated)'
 e_foldchange_mean_over_cell_lines <- rowMeans(e_foldchange) #equal to e_treated_mean_over_cell_lines - e_untreated_mean_over_cell_line
 
-#determine the p-value for a apired two-sample t-test 
-p_values <- sapply(1:length(e_treated_mean_over_cell_lines), function(x) {
-  +   t.test(e_treated_mean_over_cell_lines[x], e_untreated_mean_over_cell_lines[x])$p.value})
-FDR(pvals, qlevel = 0.05)
+#determine the p-value for a paired two-sample t-test 
+p_values <- sapply(1:nrow(e_treated), function(x) {
+  t.test(e_treated[x,], e_untreated[x,],paired= T)$p.value}) # perform t-test and save p-values of each gene in p_vales-vector
+FDR_values <- p.adjust(p_values, method = "BH", n = length(p_values)) #calculate FDR with benjamini-hochberg (BH)
+statistics_values <- cbind(e_foldchange_mean_over_cell_lines,p_values, FDR_values) #combine mean, p_values and FDR in one matrix
+
+
+cb1 <-if(FDR_values<0.05) col = "forestgreen"
+cb2 <-if (abs(e_foldchange_mean_over_cell_lines)>1 ) col = "cyan"
+cb3 <-if (FDR_values < 0.05 & abs(e_foldchange_mean_over_cell_lines) < 1) col = "firebrick"
+cb <- cbind("FDR_values < 0.05" = cb1, "e_foldchange > 1 " = cb2, "FDR_values < 0.05 and e_foldchange > 1" =cb3)
+plot(e_foldchange_mean_over_cell_lines, -log10(FDR_values), pch=20, main="Volcano plot", xlim=c(-1,2), col= cb)
