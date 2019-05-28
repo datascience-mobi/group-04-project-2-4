@@ -3,20 +3,16 @@ e_treated <- NCI_TPW_gep_treated[,grep ("erlotinib", colnames(NCI_TPW_gep_treate
 e_untreated <- NCI_TPW_gep_untreated[,grep ("erlotinib", colnames(NCI_TPW_gep_untreated))]
 e_foldchange <- e_treated - e_untreated
 
-#e_foldchange_z_transformed: z-Transformation 
-library(GeneNet)
-z.transform(e_foldchange)
-median_gene <- apply (e_foldchange, 1, function (x){
-  + median(x) })
-sd_gene <- apply(e_foldchange, 1, function (x){
-  + sd(x) })
-e_foldchange_z_transformed <- (e_foldchange-median(median_gene)) / sd(sd_gene)
+#e_foldchange_normalized: z-Transformation to get mean=0 and sd=1
+e_foldchange_normalized <- apply(e_foldchange, 2, function(x){
+  (x - mean(x)) / sd(x)
+})
 
 
 # table of 15 cell lines with highest variance to show most regulated cell lines
 #select 15 cell lines with highest variance (greater than 75% quantile, sorted by decreasing value)
-var_cell_line <- apply(e_foldchange_z_transformed, 2, function (x) {
-  + var(x)})
+var_cell_line <- apply(e_foldchange, 2, function (x) {
+  var(x)})
 cell_line_var_greater_75quantile <- sort(var_cell_line [which (var_cell_line > quantile(var_cell_line,0.75))], decreasing = TRUE)
 rm(var_cell_line)
 
@@ -30,10 +26,10 @@ kable(table_cell_lines_var_top15)
 
 #PCA to show most regulated cell lines
 #PCA with transformed matrix (each point represents a sample):
-e_foldchange_matrix_transformed <- t(e_foldchange_z_transformed)
+e_foldchange_matrix_transformed <- t(e_foldchange_normalized)
 pca <- prcomp(e_foldchange_matrix_transformed)
 plot(pca$rotation[,1], pca$rotation[,2])
-text(pca$rotation, labels = rownames(e_foldchange_z_transformed), cex = 0.4, pos = 3)
+text(pca$rotation, labels = rownames(e_foldchange_normalized), cex = 0.4, pos = 3)
 
 #PCA visualization with factoextra package (according to www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/118-principal-component-analysis-in-t-prcomp-vs-princomp/) : 
 #plot of cell lines with gradient colors by their quality of representation
