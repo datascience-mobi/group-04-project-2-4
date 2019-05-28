@@ -170,10 +170,22 @@ for (i in 1:9){ #for each cancer type
 
 #Boxplot showed batch effect --> we have to normalize the data
 # each sample should have mean 0 and sd 1
+untreated_normalized <- apply(NCI_TPW_gep_untreated, 2, function(x){
+  (x - mean(x)) / sd(x)
+})
+
+#boxplot of normalized untreated values
+par(oma = c(1, 1, 1, 8))
+boxplot(untreated_normalized, xaxt = "n", ylab = "Gene expression profile", vertical =  T, 
+        main = "Boxplot: normalized gene expression profile of untreated NCI60 celllines", 
+        boxcol = color_vector_drug)
+title(xlab = "Celllines treated with different drugs", line = 1.0)
+legend(x = 860, y = 14.5, legend = names(color_palette_drug), col = color_palette_drug, pch = 19, xpd = "TRUE")
+
+
 FC_normalized <- apply(fold_change_numbers, 2, function(x){
   (x - mean(x)) / sd(x)
 })
 
-boxplot(FC_normalized, xaxt = "n", ylab = "Fold changes", vertical =  T, 
-        main = "Boxplot: fold change distribution after normalization")
+
 
