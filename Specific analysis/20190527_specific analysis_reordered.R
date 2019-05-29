@@ -70,9 +70,17 @@ EnhancedVolcano(statistics_values,
                 FCcutoff = 1, #threshold for coloring high FC
                 transcriptPointSize = 2,
                 transcriptLabSize = 4.0)
+
 #further questions: what "do" the red genes? are they involved in certain pathways?
 #maybe we could color the genes in the volcano plot according to pathways (after milestone 4)
 
 #save the "red" genes seen in the volcano plot in a vector for further analysis
 volcano_genes <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 1 
                                                    & statistics_values[, 2] < 10e-15)]
+
+#Density plot with these genes (untreated vs. treated)
+plot(density(e_treated[volcano_genes, ]), "Density plot of gene expression", col = "red")
+lines(density(e_untreated[volcano_genes, ]), col = "black")
+legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), pch = 15)
+
+
