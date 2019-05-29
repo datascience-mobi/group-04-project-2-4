@@ -42,6 +42,7 @@ results.genes <- get_pca_var(pca)
 genes_pca_highest_contribution <- results.genes$contrib '
 
 
+#Volcano plot
 #mean of gene expression of each gene over all cell lines
 e_foldchange_mean_over_cell_lines <- rowMeans(e_foldchange) #equal to e_treated_mean_over_cell_lines - e_untreated_mean_over_cell_line
 
@@ -49,19 +50,29 @@ e_foldchange_mean_over_cell_lines <- rowMeans(e_foldchange) #equal to e_treated_
 p_values <- sapply(rownames(e_treated), function(x) {
   t.test(e_treated[x,], e_untreated[x,],paired= T)$p.value}) # perform t-test and save p-values of each gene in p_vales-vector
 FDR_values <- p.adjust(p_values, method = "BH", n = length(p_values))#calculate FDR with benjamini-hochberg (BH)
-color_volcano <- sapply (rownames(e_treated), function (x) {
-  "black"
-  })
-
-statistics_values <- cbind(e_foldchange_mean_over_cell_lines,p_values, -log10(FDR_values), color_volcano) #combine mean, p_values and FDR in one matrix
-
-statistics_values [statistics_values[ ,3] > 15, "color_volcano"] = "blue"
-statistics_values [statistics_values[ ,1] > 1 & statistics_values[ ,1] < -1, "color_volcano"] = "green"
-statistics_values [statistics_values[ ,3] > 15 & statistics_values[ ,1] < -1 & 
-                     statistics_values[, 1] > 1, "color_volcano"] = "red"
-
-plot(statistics_values[ , 1], statistics_values[, 3], pch=20, 
-     main="Volcano plot", xlim=c(-1,2), col = statistics_values[,"color_volcano"])
-text (e_foldchange_mean_over_cell_lines, FDR_values, labels = rownames(statistics_values), cex=0.2)
 
 
+#table of results 
+statistics_values <- cbind(e_foldchange_mean_over_cell_lines, FDR_values)
+#coloring with package enhanced volcano
+#install package EnhancedVolcano (needs ggplot2, ggrepel)
+if (!requireNamespace('BiocManager', quietly = TRUE))
+  install.packages('BiocManager')
+BiocManager::install('EnhancedVolcano')
+library(EnhancedVolcano)
+
+EnhancedVolcano(statistics_values, 
+                lab = rownames(statistics_values),
+                x = "e_foldchange_mean_over_cell_lines", #colname of FC values in this table (statistics_values)
+                y = "FDR_values", #colname of FDR (statistics_values)
+                title = "Volcano plot of all genes",
+                pCutoff = 10e-15, #threshold for coloring significant ones
+                FCcutoff = 1, #threshold for coloring high FC
+                transcriptPointSize = 2,
+                transcriptLabSize = 4.0)
+#further questions: what "do" the red genes? are they involved in certain pathways?
+#maybe we could color the genes in the volcano plot according to pathways (after milestone 4)
+
+#save the "red" genes seen in the volcano plot in a vector for further analysis
+volcano_genes <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 1 
+                                                   & statistics_values[, 2] < 10e-15)]
