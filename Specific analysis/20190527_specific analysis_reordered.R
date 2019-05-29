@@ -84,3 +84,13 @@ lines(density(e_untreated[volcano_genes, ]), col = "black")
 legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), pch = 15)
 
 
+#MA-Plot
+M <- e_foldchange # M= log2(treated) - log2 (untreated)
+A <- 1/2*(e_treated+ e_untreated) # average log2-expression value A = 1/2 (log2(treated)+log2(untreated))
+MA <- cbind("M"= rowMeans(M), "A" = rowMeans(A), FDR_values)
+MA <- as.data.frame(MA)
+ggplot(data=MA, aes(x=A, y=M), fdr=0.05, fc=1.5, genenames=NULL, detection_call=NULL, size=NULL) #plot with ggplot
+
+install.packages("BiocManager") #plot with limma
+BiocManager::install("limma")
+limma::plotMA()
