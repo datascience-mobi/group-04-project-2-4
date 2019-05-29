@@ -11,8 +11,7 @@ e_foldchange_normalized <- apply(e_foldchange, 2, function(x){
 
 # table of 15 cell lines with highest variance to show most regulated cell lines
 #select 15 cell lines with highest variance (greater than 75% quantile, sorted by decreasing value)
-var_cell_line <- apply(e_foldchange, 2, function (x) {
-  var(x)})
+var_cell_line <- apply(e_foldchange, 2, var)
 cell_line_var_greater_75quantile <- sort(var_cell_line [which (var_cell_line > quantile(var_cell_line,0.75))], decreasing = TRUE)
 rm(var_cell_line)
 
@@ -20,14 +19,12 @@ rm(var_cell_line)
 table_cell_lines_var_top15 <- cbind(names(cell_line_var_greater_75quantile), cell_line_var_greater_75quantile)
 rownames(table_cell_lines_var_top15) <- c(1:nrow(table_cell_lines_var_top15))
 colnames(table_cell_lines_var_top15) <- c("cell line", "variance")
-#kable(): simple table formatting function
-kable(table_cell_lines_var_top15)
 
 
 #PCA to show most regulated cell lines
 #PCA with transformed matrix (each point represents a sample):
 e_foldchange_matrix_transformed <- t(e_foldchange_normalized)
-pca <- prcomp(e_foldchange_matrix_transformed)
+pca <- prcomp(e_foldchange_normalized)
 plot(pca$rotation[,1], pca$rotation[,2])
 text(pca$rotation, labels = rownames(e_foldchange_normalized), cex = 0.4, pos = 3)
 
@@ -46,12 +43,10 @@ genes_pca_highest_contribution <- results.genes$contrib '
 
 
 #mean of gene expression of each gene over all cell lines
-'e_treated_mean_over_cell_lines <- rowMeans(e_treated)
-e_untreated_mean_over_cell_lines <- rowMeans(e_untreated)'
 e_foldchange_mean_over_cell_lines <- rowMeans(e_foldchange) #equal to e_treated_mean_over_cell_lines - e_untreated_mean_over_cell_line
 
 #determine the p-value for a paired two-sample t-test 
-p_values <- sapply(1:nrow(e_treated), function(x) {
+p_values <- sapply(rownames(e_treated), function(x) {
   t.test(e_treated[x,], e_untreated[x,],paired= T)$p.value}) # perform t-test and save p-values of each gene in p_vales-vector
 FDR_values <- p.adjust(p_values, method = "BH", n = length(p_values)) #calculate FDR with benjamini-hochberg (BH)
 statistics_values <- cbind(e_foldchange_mean_over_cell_lines,p_values, FDR_values) #combine mean, p_values and FDR in one matrix
