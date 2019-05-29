@@ -24,7 +24,7 @@ colnames(table_cell_lines_var_top15) <- c("cell line", "variance")
 #PCA to show most regulated cell lines
 #PCA with transformed matrix (each point represents a sample):
 e_foldchange_matrix_transformed <- t(e_foldchange_normalized)
-pca <- prcomp(e_foldchange_normalized)
+pca <- prcomp(e_foldchange_matrix_transformed)
 plot(pca$rotation[,1], pca$rotation[,2])
 text(pca$rotation, labels = rownames(e_foldchange_normalized), cex = 0.4, pos = 3)
 
@@ -48,12 +48,20 @@ e_foldchange_mean_over_cell_lines <- rowMeans(e_foldchange) #equal to e_treated_
 #determine the p-value for a paired two-sample t-test 
 p_values <- sapply(rownames(e_treated), function(x) {
   t.test(e_treated[x,], e_untreated[x,],paired= T)$p.value}) # perform t-test and save p-values of each gene in p_vales-vector
-FDR_values <- p.adjust(p_values, method = "BH", n = length(p_values)) #calculate FDR with benjamini-hochberg (BH)
-statistics_values <- cbind(e_foldchange_mean_over_cell_lines,p_values, FDR_values) #combine mean, p_values and FDR in one matrix
+FDR_values <- p.adjust(p_values, method = "BH", n = length(p_values))#calculate FDR with benjamini-hochberg (BH)
+color_volcano <- sapply (rownames(e_treated), function (x) {
+  "black"
+  })
+
+statistics_values <- cbind(e_foldchange_mean_over_cell_lines,p_values, -log10(FDR_values), color_volcano) #combine mean, p_values and FDR in one matrix
+
+statistics_values [statistics_values[ ,3] > 15, "color_volcano"] = "blue"
+statistics_values [statistics_values[ ,1] > 1 & statistics_values[ ,1] < -1, "color_volcano"] = "green"
+statistics_values [statistics_values[ ,3] > 15 & statistics_values[ ,1] < -1 & 
+                     statistics_values[, 1] > 1, "color_volcano"] = "red"
+
+plot(statistics_values[ , 1], statistics_values[, 3], pch=20, 
+     main="Volcano plot", xlim=c(-1,2), col = statistics_values[,"color_volcano"])
+text (e_foldchange_mean_over_cell_lines, FDR_values, labels = rownames(statistics_values), cex=0.2)
 
 
-cb1 <-if(FDR_values<0.05) col = "forestgreen"
-cb2 <-if (abs(e_foldchange_mean_over_cell_lines)>1 ) col = "cyan"
-cb3 <-if (FDR_values < 0.05 & abs(e_foldchange_mean_over_cell_lines) < 1) col = "firebrick"
-cb <- cbind("FDR_values < 0.05" = cb1, "e_foldchange > 1 " = cb2, "FDR_values < 0.05 and e_foldchange > 1" =cb3)
-plot(e_foldchange_mean_over_cell_lines, -log10(FDR_values), pch=20, main="Volcano plot", xlim=c(-1,2), col= cb)
