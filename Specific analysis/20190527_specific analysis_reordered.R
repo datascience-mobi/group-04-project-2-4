@@ -85,11 +85,24 @@ legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), 
 
 
 #MA-Plot
+install.packages("ggplot2", dep = T)
+library(ggplot2)
 M <- e_foldchange # M= log2(treated) - log2 (untreated)
 A <- 1/2*(e_treated+ e_untreated) # average log2-expression value A = 1/2 (log2(treated)+log2(untreated))
 MA <- cbind("M"= rowMeans(M), "A" = rowMeans(A), FDR_values)
 MA <- as.data.frame(MA)
-ggplot(data=MA, aes(x=A, y=M), fdr=0.05, fc=1.5, genenames=NULL, detection_call=NULL, size=NULL) #plot with ggplot
+MAplot <- ggplot(data=MA)+ 
+       aes(x=A, y=M, color=FDR_values)+
+       geom_point()+
+       geom_text_repel(
+         data=subset(MA, FDR_values <0.05),
+         aes(label=rownames(statistics_values))
+         size=5) +
+       xlab("mean expression")+
+       ylab("log fold change")
+MAplot + scale_color_gradient(low="blue", high= "red")
+  fdr=0.05, fc=1.5, genenames=NULL, detection_call=NULL, size=NULL) #plot with ggplot
+plot(rowMeans(A), rowMeans(M))
 
 install.packages("BiocManager") #plot with limma
 BiocManager::install("limma")
