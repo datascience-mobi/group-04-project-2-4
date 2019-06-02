@@ -1,0 +1,35 @@
+
+> 
+  > #Barplot of genes with highest mean in FC over Erlotinib
+  > genes_FC_erlotinb <- apply(e_foldchange_z_transformed, 1, mean)
+  > genes_FC_erlotinb <- sort(abs(genes_FC_erlotinb), decreasing = TRUE)
+  > par(oma =c(10,1,1,1))
+  > barplot(genes_FC_erlotinb [1:20], main = "Genes with highest FC after erloinib treatment", ylab = "FC", las = 2)
+  > 
+    > genes_FC_erlotinb[1:20]
+  
+  #Finde the row number with the name
+  which(rownames(e_foldchange_z_transformed) == "CHAC1") 
+  
+  
+  
+  
+  
+  
+  #2. define a color palette with 9 chosen colors
+  color_palette_cancertype <- c("aquamarine", "brown", "forestgreen", "chartreuse", "darkgoldenrod1", "cadetblue","purple", "firebrick1", "deepskyblue")
+  names(color_palette_cancertype) <- levels(cellline_annotation$Cancer_type)
+  
+  #create vector containing a color name for each sample according to cancertype
+  color_vector_cancertype <- sapply(colnames(fold_changes), function(x){
+    unname(color_palette_cancertype[fold_changes[1, x]]) #1st row of FC contains cancertype 
+  })
+  
+  
+  #Color PCA according to cancertype
+  par(oma = c(1, 1, 1, 10))
+  #PC3 and PC4
+  plot(pca$rotation[,3], pca$rotation[,4], col = color_vector_cancertype, pch = 19, xlab = "PC3", ylab = "PC4", main = "PCA with FC of all samples")
+  legend(x = 0.11, y = 0.06, legend = names(color_palette_cancertype), col = color_palette_cancertype, pch = 19, xpd = "TRUE")
+  
+  rm(pca)
