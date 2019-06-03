@@ -85,25 +85,42 @@ legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), 
 
 
 #MA-Plot
-install.packages("ggplot2", dep = T)
+#install package and load ggplot2 and ggrepel
+install.packages("ggplot2")
 library(ggplot2)
+library(ggrepel)
+
+#create matrices with the variables M and A of a MA-plot
 M <- e_foldchange # M= log2(treated) - log2 (untreated)
 A <- 1/2*(e_treated+ e_untreated) # average log2-expression value A = 1/2 (log2(treated)+log2(untreated))
 MA <- cbind("M"= rowMeans(M), "A" = rowMeans(A), FDR_values)
 MA <- as.data.frame(MA)
-MAplot <- ggplot(data=MA)+ 
-       aes(x=A, y=M, color=FDR_values)+
-       geom_point()+
-       geom_text_repel(
-         data=subset(MA, FDR_values <0.05),
-         aes(label=rownames(statistics_values))
-         size=5) +
-       xlab("mean expression")+
-       ylab("log fold change")
-MAplot + scale_color_gradient(low="blue", high= "red")
-  fdr=0.05, fc=1.5, genenames=NULL, detection_call=NULL, size=NULL) #plot with ggplot
-plot(rowMeans(A), rowMeans(M))
+MA$Significant <- ifelse(MA$FDR_values<0.05, "FDR < 0.05", "Not Sig")
 
-install.packages("BiocManager") #plot with limma
-BiocManager::install("limma")
-limma::plotMA()
+#plot the MAplot and color according to significance
+ggplot(data=MA)+ 
+  aes(x=A, y=M, color= Significant)+
+  geom_point()+
+  xlab("mean expression")+
+  ylab("log fold change")
+
+#label significant genes: does not work, because rownames(MA) more names than there are points, which should be labeles (only subset labeled)
+ggplot(data=MA)+ 
+  aes(x=A, y=M, color= Significant)+
+  geom_point()+
+  xlab("mean expression")+
+  ylab("log fold change")+
+  geom_text(data=subset(MA, FDR_values < 0.05), aes(A, M, label=rownames(MA)))
+  
+#ggplot from sthda.com "ggplot2 texts: Add text annotations to a graph in R software" same problem with labeling as above 
+ggplot (MA, aes(x=A, y=M))+
+  geom_point(aes(color = Significant))+
+  scale_color_manual (values = c("red", "grey"))+
+  theme_bw(base_size = 12)+ theme(legend.position = "bottom")+
+  geom_text_repel(
+    data=subset(MA, FDR_values<0.05),
+    aes(label=rownames(MA)),
+    size=5,
+    box.padding = unit(0.35, "lines"),
+    point.padding = unit(0.3, "lines")
+  )
