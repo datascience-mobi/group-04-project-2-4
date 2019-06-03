@@ -3,6 +3,12 @@ e_treated <- NCI_TPW_gep_treated[,grep ("erlotinib", colnames(NCI_TPW_gep_treate
 e_untreated <- NCI_TPW_gep_untreated[,grep ("erlotinib", colnames(NCI_TPW_gep_untreated))]
 e_foldchange <- e_treated - e_untreated
 
+#colnames of e_foldchange with cellline instead of complete sample name
+cellline <- sapply(colnames(e_foldchange), function(x){
+  colnames(annotation_sorted_by_cell_lines)[which(x == annotation_sorted_by_cell_lines, arr.ind = TRUE)[2]]
+})
+colnames(e_foldchange) <- cellline
+
 #e_foldchange_normalized: z-Transformation to get mean=0 and sd=1
 e_foldchange_normalized <- apply(e_foldchange, 2, function(x){
   (x - mean(x)) / sd(x)
