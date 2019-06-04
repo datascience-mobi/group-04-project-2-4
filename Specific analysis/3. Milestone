@@ -10,8 +10,20 @@ genes_FC_erlotinb[1:20]
 
 #Finde the row number with the name
 which(rownames(e_foldchange_z_transformed) == "CHAC1") 
-  
-grepl("CELLLINE_NAME", e_foldchange_z_transformed)  #funktioniert --> befehl schreiben für allle cellanotation [,1]
+ 
+#colnames of e_foldchange with cellline instead of complete sample name
+cellline <- sapply(colnames(e_foldchange), function(x){
+colnames(annotation_sorted_by_cell_lines)[which(x == annotation_sorted_by_cell_lines, arr.ind = TRUE)[2]] })
+colnames(e_foldchange) <- cellline
+print(cellline)  
+
+#colnames of e_foldchange with cellline instead of complete sample name
+> cellline_z_transformed <- sapply(colnames(e_foldchange_z_transformed), function(x){
++     colnames(annotation_sorted_by_cell_lines)[which(x == annotation_sorted_by_cell_lines, arr.ind = TRUE)[2]]
++ })
+> colnames(e_foldchange_z_transformed) <- cellline_z_transformed
+
+grepl("CELLLINE_NAME", celline)  #funktioniert --> befehl schreiben für alle cellanotation [,1]
   
 cellline_names <- cellline_annotation[,1]
 print(cellline_names)
