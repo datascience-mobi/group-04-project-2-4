@@ -81,12 +81,13 @@ EnhancedVolcano(statistics_values,
 #maybe we could color the genes in the volcano plot according to pathways (after milestone 4)
 
 #save the "red" genes seen in the volcano plot in a vector for further analysis
-volcano_genes <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 1 
+biomarkers <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 1 
                                                    & statistics_values[, 2] < 10e-15)]
 
+
 #Density plot with these genes (untreated vs. treated)
-plot(density(e_treated[volcano_genes, ]), "Density plot of gene expression", col = "red")
-lines(density(e_untreated[volcano_genes, ]), col = "black")
+plot(density(e_treated[biomarkers, ]), "Density plot of gene expression", col = "red")
+lines(density(e_untreated[biomarkers, ]), col = "black")
 legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), pch = 15)
 
 
@@ -103,11 +104,10 @@ MA <- cbind("M"= rowMeans(M), "A" = rowMeans(A), FDR_values)
 MA <- as.data.frame(MA)
 MA$Significant <- ifelse(MA$FDR_values<0.05, "FDR < 0.05", "Not Sig")
 
-#table with significant genes
+#matrix with important genes of MA plot 
 MA_labeled <- MA[which(MA[ , "M"] > 1.5 | MA[,"M"] > 0.95 & MA[,"A"] > 10) , ]
 
-
-#label significant genes: does not work, because rownames(MA) more names than there are points, which should be labeles (only subset labeled)
+#MA plot labeled with important genes of MA plot
 ggplot(data=MA)+ 
   aes(x=A, y=M, color= Significant)+
   geom_point()+
@@ -115,16 +115,58 @@ ggplot(data=MA)+
   ylab("log fold change")+
   geom_text(data=MA_labeled, aes(A, M, label=rownames(MA_labeled)))
 
-#label volcano genes
-MA_volcano_genes <- sapply(volcano_genes, function(x){
+#label biomarkers, obtained through volcano plot, in MA plot
+MA_biomarkers <- sapply(biomarkers, function(x){
   MA[x, ]
 })
-MA_volcano_genes <- as.data.frame(t(MA_volcano_genes))
+MA_biomarkers <- t(MA_biomarkers)
+MA_biomarkers <- as.data.frame(MA_biomarkers)
 
-
+#MA plot labeled with biomarker genes of volcano plot
 ggplot(data=MA)+ 
   aes(x=A, y=M, color= Significant)+
   geom_point()+
   xlab("mean expression")+
   ylab("log fold change")+
-  geom_text(data=MA_volcano_genes, aes(A, M, label=rownames(MA_volcano_genes)))
+  geom_text(data=MA_biomarkers, aes(A, M, label=rownames(MA_biomarkers)))
+
+# boxplot of foldchange of biomarkers 
+# create a matrix foldchange_biomarkers, with the foldchange only of the biomarkers
+foldchange_biomarkers <- sapply(biomarkers, function(x){
+  e_foldchange[x, ]
+})
+boxplot(foldchange_biomarkers, ylab= "foldchange", 
+        main= "boxplot of foldchange of the biomarkers", las=2)
+
+
+# boxplot of gene expression treated vs. untreated of biomarkers 
+# create a matrix e_treated_biomarkers/ e_untreated_biomarkers, with the gene expression only of the biomarkers
+e_treated_biomarkers <- sapply(biomarkers, function(x){
+  e_treated[x, ]
+})
+e_untreated_biomarkers <- sapply(biomarkers, function(x){
+  e_untreated[x, ]
+}) 
+
+# create a matrix, which contains gene expression of treated and untreated and sort it after colnames
+e_treated_untreated_biomarkers <- cbind (e_treated_biomarkers, e_untreated_biomarkers)
+e_treated_untreated_biomarkers <- e_treated_untreated_biomarkers[,order(colnames(e_treated_untreated_biomarkers))]
+
+# boxplot, where treated and untreated are right next to each other 
+boxplot(e_treated_untreated_biomarkers, ylab= "gene expression (log2)", 
+        main= "boxplot of gene expression of the biomarkers", las=2)
+
+#boxplot with ggplot, as it has more functions: does not work 
+e_treated_biomarkers <- as.data.frame(e_treated_biomarkers)
+e_untreated_biomarkers <- as.data.frame(e_untreated_biomarkers)
+library(ggplot2)
+library(gridExtra)
+boxplot_treated <- ggplot(e_treated_biomarkers) +
+  geom_boxplot (aes(x=Var2,y=value,fill=Var2))+
+  facet_grid(~Var1)
+
+boxplot_untreated <- ggplot(e_untreated_biomarkers) +
+  geom_boxplot(aes(x=Var2,y=value,fill=Var2))+
+  facet_grid(~Var1)
+
+grid.arrange(boxplot_treated, boxplot_untreated)
