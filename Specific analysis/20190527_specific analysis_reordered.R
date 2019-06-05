@@ -103,12 +103,9 @@ MA <- cbind("M"= rowMeans(M), "A" = rowMeans(A), FDR_values)
 MA <- as.data.frame(MA)
 MA$Significant <- ifelse(MA$FDR_values<0.05, "FDR < 0.05", "Not Sig")
 
-#plot the MAplot and color according to significance
-ggplot(data=MA)+ 
-  aes(x=A, y=M, color= Significant)+
-  geom_point()+
-  xlab("mean expression")+
-  ylab("log fold change")
+#table with significant genes
+MA_labeled <- MA[which(MA[ , "M"] > 1.5 | MA[,"M"] > 0.95 & MA[,"A"] > 10) , ]
+
 
 #label significant genes: does not work, because rownames(MA) more names than there are points, which should be labeles (only subset labeled)
 ggplot(data=MA)+ 
@@ -116,17 +113,18 @@ ggplot(data=MA)+
   geom_point()+
   xlab("mean expression")+
   ylab("log fold change")+
-  geom_text(data=subset(MA, FDR_values < 0.05), aes(A, M, label=rownames(MA)))
-  
-#ggplot from sthda.com "ggplot2 texts: Add text annotations to a graph in R software" same problem with labeling as above 
-ggplot (MA, aes(x=A, y=M))+
-  geom_point(aes(color = Significant))+
-  scale_color_manual (values = c("red", "grey"))+
-  theme_bw(base_size = 12)+ theme(legend.position = "bottom")+
-  geom_text_repel(
-    data=subset(MA, FDR_values<0.05),
-    aes(label=rownames(MA)),
-    size=5,
-    box.padding = unit(0.35, "lines"),
-    point.padding = unit(0.3, "lines")
-  )
+  geom_text(data=MA_labeled, aes(A, M, label=rownames(MA_labeled)))
+
+#label volcano genes
+MA_volcano_genes <- sapply(volcano_genes, function(x){
+  MA[x, ]
+})
+MA_volcano_genes <- as.data.frame(t(MA_volcano_genes))
+
+
+ggplot(data=MA)+ 
+  aes(x=A, y=M, color= Significant)+
+  geom_point()+
+  xlab("mean expression")+
+  ylab("log fold change")+
+  geom_text(data=MA_volcano_genes, aes(A, M, label=rownames(MA_volcano_genes)))
