@@ -64,7 +64,13 @@ rm(var_cell_line)
 ```{r}
 table_cell_lines_var_top15 <- cbind(names(cell_line_var_greater_75quantile), cell_line_var_greater_75quantile)
 rownames(table_cell_lines_var_top15) <- c(1:nrow(table_cell_lines_var_top15))
-colnames(table_cell_lines_var_top15) <- c("cell line", "variance")
+
+#add column with cancertype for top15 celllines
+cancertypes_top15 <- as.data.frame(sapply(table_cell_lines_var_top15[ , 1], function(x) {
+  cellline_annotation[which(x == cellline_annotation[, 1]), 2]
+}))
+table_cell_lines_var_top15 <- cbind(table_cell_lines_var_top15, cancertypes_top15)
+colnames(table_cell_lines_var_top15) <- c("Cellline", "Variance", "Cancertype")
 ```
 
 

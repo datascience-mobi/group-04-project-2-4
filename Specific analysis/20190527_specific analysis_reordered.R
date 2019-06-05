@@ -18,19 +18,24 @@ e_foldchange_normalized <- apply(e_foldchange, 2, function(x){
 # table of 15 cell lines with highest variance to show most regulated cell lines
 #select 15 cell lines with highest variance (greater than 75% quantile, sorted by decreasing value)
 var_cell_line <- apply(e_foldchange, 2, var)
-cell_line_var_greater_75quantile <- sort(var_cell_line [which (var_cell_line > quantile(var_cell_line,0.75))], decreasing = TRUE)
+cell_line_var_greater_75quantile <- sort(var_cell_line [which (abs(var_cell_line) > quantile(abs(var_cell_line), 0.75))], decreasing = TRUE)
 rm(var_cell_line)
 
 #create a table containing the name and the variance of the 15 cell lines with highest variance
 table_cell_lines_var_top15 <- cbind(names(cell_line_var_greater_75quantile), cell_line_var_greater_75quantile)
 rownames(table_cell_lines_var_top15) <- c(1:nrow(table_cell_lines_var_top15))
-colnames(table_cell_lines_var_top15) <- c("cell line", "variance")
 
+#add column with cancertype for top15 celllines
+cancertypes_top15 <- as.data.frame(sapply(table_cell_lines_var_top15[ , 1], function(x) {
+  cellline_annotation[which(x == cellline_annotation[, 1]), 2]
+}))
+table_cell_lines_var_top15 <- cbind(table_cell_lines_var_top15, cancertypes_top15)
+rm(cancertypes_top15)
+colnames(table_cell_lines_var_top15) <- c("Cellline", "Variance", "Cancertype")
 
 #PCA to show most regulated cell lines
 #PCA with transformed matrix (each point represents a sample):
-e_foldchange_matrix_transformed <- t(e_foldchange_normalized)
-pca <- prcomp(e_foldchange_matrix_transformed)
+pca <- prcomp(t(e_foldchange_normalized))
 plot(pca$rotation[,1], pca$rotation[,2])
 text(pca$rotation, labels = rownames(e_foldchange_normalized), cex = 0.4, pos = 3)
 
