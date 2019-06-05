@@ -42,28 +42,75 @@ rm(MAPK, AKT_PI3K, Cell_Cycle_Checkpoint, JAK_STAT, Immunity_Related, DNA_repair
 
 #calculate mean FC over genes of one pathway for each sample
 heatmap_data <- sapply(1:length(pathways), function(x){ #for each pathway
-  sapply(colnames(e_foldchange_normalized), function(y){ #for each sample
-    abs(mean(e_foldchange_normalized[pathways[[x]], y])) #calculate mean FC of genes of one pathway
+  sapply(1:ncol(e_foldchange_normalized), function(y){ #for each sample
+    mean(e_foldchange_normalized[pathways[[x]], y]) #calculate mean FC of genes of one pathway
   })
 })
 
 colnames(heatmap_data) <- c(names(pathways))
 rownames(heatmap_data) <- colnames(e_foldchange_normalized)
 
-#Generate heatmap with package gplots
-library(gplots)
-par(oma = c(1, 1, 1, 10))
-heatmap.2(t(heatmap_data),
-        scale = "column",
-        main = "Mean FC of genes per pathway for 59 celllines",
-        cex.main = 0.3,
-        xlab = "Celllines",
-        col = bluered(100),
-        trace = "none", density.info = "none") #trace shows blue lines, in color key density would be shown
+#Heatmap with package pheatmap (pretty heatmap)
+#Tutorial for pheatmaps: https://davetang.org/muse/2018/05/15/making-a-heatmap-in-r-with-the-pheatmap-package/
+library(pheatmap)
+pheatmap(t(heatmap_data))
 
-#TO DO
-#Alternative: package pheatmap (pretty heatmap)
-#clustermethod = "ward.D2"
+#Clustering with package dendextend
+library(dendextend)
+#hierachical clustering (hclust) of celllines, dist(): euclidean distance, agglomeration method: "ward.D2"
+cellline_clustering <- hclust(dist(heatmap_data), method = "ward.D2") 
+#plot the generated dendrogram
+as.dendrogram(cellline_clustering) %>%
+  plot(horiz = TRUE)
+#cutree: cuts the tree to generate k clusters
+cellline_groups <- cutree(tree = as.dendrogram(cellline_clustering), k = 9)
+
+#compare clusters of celllines with cancertype in heatmap 
+cellline_cancertype <- sapply(names(cellline_groups), function(x){ #for each erlotinib cell line
+  unname(cellline_annotation[which(cellline_annotation$Cell_Line_Name == x), 2])
+})
+cellline_clusters <- as.data.frame(cbind(cellline_groups, cellline_cancertype))
+colnames(cellline_clusters) <- c("Ward.D2 cluster Celllines", "Cancertype cluster")
+
+#cluster pathways: 
+pathway_clustering <- hclust(dist(t(heatmap_data)), method = "ward.D2") 
+pathway_groups <- as.data.frame(cutree(tree = as.dendrogram(pathway_clustering), k = 3))
+colnames(pathway_groups) <- "Ward.D2 cluster Pathways"
+
+#TO DO: Create list of three color vectors for annotation instead of standard colors?
+#color <- list(
+  #cancertype = color_palette_cancertype
+#)
+
+
+#generate heatmap with colored bars according to clusters
+pheatmap(t(heatmap_data),
+         annotation_col = cellline_clusters,
+         annotation_row = pathway_groups,
+         #annotation_colors = color
+         )
+
+
+#Heatmap with Progeny
+progeny_heatmap <- progeny(e_foldchange_normalized)
+
+#cluster celllines:
+cellline_clustering <- hclust(dist(progeny_heatmap), method = "ward.D2")
+cellline_groups <- as.data.frame(cutree(tree = as.dendrogram(cellline_clustering), k = 9))
+cellline_clusters <- as.data.frame(cbind(cellline_groups, cellline_cancertype))
+colnames(cellline_clusters) <- c("Ward.D2 cluster Celllines", "Cancertype cluster")
+#cluster pathways:
+pathway_clustering <- hclust(dist(t(progeny_heatmap)), method = "ward.D2") 
+pathway_groups <- as.data.frame(cutree(tree = as.dendrogram(pathway_clustering), k = 4))
+colnames(pathway_groups) <- "Ward.D2 cluster Pathways"
+
+pheatmap(t(progeny_heatmap),
+         annotation_col = cellline_clusters,
+         annotation_row = pathway_groups)
+
+
+#Notes Juli
 #library("ggpubr") für Signifikanztests
 #pathways: kegg database (cancer-related pathways)
 #clustering: elbow plot
+
