@@ -67,9 +67,6 @@ FDR_values <- p.adjust(p_values, method = "BH", n = length(p_values))#calculate 
 statistics_values <- cbind(e_foldchange_mean_over_cell_lines, FDR_values)
 #coloring with package enhanced volcano
 #install package EnhancedVolcano (needs ggplot2, ggrepel)
-if (!requireNamespace('BiocManager', quietly = TRUE))
-  install.packages('BiocManager')
-BiocManager::install('EnhancedVolcano')
 library(EnhancedVolcano)
 
 EnhancedVolcano(statistics_values, 

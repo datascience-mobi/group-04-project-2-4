@@ -14,8 +14,27 @@ knitr::opts_chunk$set(echo = TRUE)
 if (!requireNamespace("BiocManager", quietly = TRUE))
     install.packages("BiocManager")
 BiocManager::install("DESeq2")
+
 #Factoextra
 install.packages("factoextra")
+
 #knitr
 install.packages("knitr")
+
+#Enhanced volcano
+if (!requireNamespace('BiocManager', quietly = TRUE))
+  install.packages('BiocManager')
+BiocManager::install('EnhancedVolcano')
+
+#pheatmap
+install.packages("pheatmap")
+
+#dendextend
+install.packages("dendextend")
+
+#ggplot2
+install.packages("ggplot2")
+
+#ggrepel
+install.packages("ggrepel")
 ```
