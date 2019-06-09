@@ -92,12 +92,12 @@ color_vector_cancertype <- sapply(colnames(fold_changes), function(x){
 #Boxplot
 #par makes spaces outside the plot larger, xaxt: removes labels on x-axis
 #title() used to move xlab nearer to the axis
-par(oma = c(1, 1, 1, 8))
+par(oma = c(1, 1, 1, 8), xpd = "TRUE")
 boxplot(NCI_TPW_gep_untreated, xaxt = "n", ylab = "Gene expression profile", vertical =  T, 
         main = "Boxplot: gene expression profile of untreated NCI60 celllines", 
         boxcol = color_vector_drug)
 title(xlab = "Celllines treated with different drugs", line = 1.0)
-legend(x = 860, y = 14.5, legend = names(color_palette_drug), col = color_palette_drug, pch = 19, xpd = "TRUE")
+legend(x = 860, y = 14.5, legend = names(color_palette_drug), col = color_palette_drug, pch = 19)
 
 
 
@@ -175,12 +175,12 @@ untreated_normalized <- apply(NCI_TPW_gep_untreated, 2, function(x){
 })
 
 #boxplot of normalized untreated values
-par(oma = c(1, 1, 1, 8))
+par(oma = c(1, 1, 1, 8), xpd = "TRUE")
 boxplot(untreated_normalized, xaxt = "n", ylab = "Gene expression profile", vertical =  T, 
         main = "Boxplot: normalized gene expression profile of untreated NCI60 celllines", 
         boxcol = color_vector_drug)
 title(xlab = "Celllines treated with different drugs", line = 1.0)
-legend(x = 860, y = 14.5, legend = names(color_palette_drug), col = color_palette_drug, pch = 19, xpd = "TRUE")
+legend(x = 860, y = 3.4, legend = names(color_palette_drug), col = color_palette_drug, pch = 19)
 
 
 FC_normalized <- apply(fold_change_numbers, 2, function(x){

@@ -98,7 +98,6 @@ legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), 
 
 #MA-Plot
 #install package and load ggplot2 and ggrepel
-install.packages("ggplot2")
 library(ggplot2)
 library(ggrepel)
 
@@ -106,6 +105,7 @@ library(ggrepel)
 M <- e_foldchange # M= log2(treated) - log2 (untreated)
 A <- 1/2*(e_treated+ e_untreated) # average log2-expression value A = 1/2 (log2(treated)+log2(untreated))
 MA <- cbind("M"= rowMeans(M), "A" = rowMeans(A), FDR_values)
+rm(M, A)
 MA <- as.data.frame(MA)
 MA$Significant <- ifelse(MA$FDR_values<0.05, "FDR < 0.05", "Not Sig")
 
