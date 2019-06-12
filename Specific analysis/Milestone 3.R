@@ -25,12 +25,19 @@ plot(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",],
      xlab = "logGI50", 
      ylab = "EGR1 Expression (log2, relative to control)",        
      main = "Erlotinib 24h")
+
+NegLogGI50_59_cellline_names <- colnames(NegLogGI50 [,-c (8,29)])
+ text(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",], labels=NegLogGI50_59_cellline_names, pos =4)
+# text(e_foldchange_normalized ["EGR1",], label=ifelse (e_foldchange_normalized ["EGR1",4] < -4,
+#as.character (NegLogGI50_59_cellline_names),''), pos =4)
+ #läuft durch macht abe nichts 
+ 
 legend(x = -3.8, y = 2, 
        legend = names(color_palette_cancertype), 
        col = color_palette_cancertype, 
        pch = 19)
 
 'to do:
-legende hinzufügen
+nur spezifische Cellinien benennen
 pearson correlation
 linear regression'

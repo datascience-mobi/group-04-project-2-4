@@ -90,6 +90,14 @@ color_vector_cancertype <- sapply(colnames(fold_changes), function(x){
 
 
 #Boxplot
+#Boxplot without coloring according to drug
+par(oma = c(1, 1, 1, 8), xpd = "TRUE")
+boxplot(NCI_TPW_gep_untreated, xaxt = "n", ylab = "Gene expression profile", vertical =  T, 
+        main = "Boxplot: gene expression profile of untreated NCI60 celllines", 
+        boxcol = color_vector_drug)
+title(xlab = "Celllines treated with different drugs", line = 1.0)
+
+
 #par makes spaces outside the plot larger, xaxt: removes labels on x-axis
 #title() used to move xlab nearer to the axis
 par(oma = c(1, 1, 1, 8), xpd = "TRUE")
