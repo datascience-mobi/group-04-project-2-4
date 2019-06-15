@@ -75,67 +75,41 @@ boxplot(NCI_TPW_gep_untreated,
         xaxt = "n", 
         ylab = "Gene expression profile", 
         vertical =  T, 
-        main = "Boxplot: gene expression profile of untreated NCI60 celllines", 
+        main = "Gene expression profile of untreated NCI60 celllines")
+title(xlab = "Samples", line = 1.0)
+  #batch effect was seen --> corresponding to drugs?
+
+#Color plot according to drugs
+boxplot(NCI_TPW_gep_untreated, 
+        xaxt = "n", 
+        ylab = "Gene expression profile", 
+        vertical =  T, 
+        main = "Gene expression profile of untreated NCI60 celllines", 
         boxcol = color_vector_drug)
-title(xlab = "Celllines treated with different drugs", line = 1.0)
+title(xlab = "Samples", line = 1.0)
 legend(x = 860, 
        y = 14.5, 
        legend = names(color_palette_drug), 
        col = color_palette_drug, 
        pch = 19)
 
+#Normalization of data is necessary
+#each sample should have mean 0 and sd 1
+untreated_normalized <- apply(NCI_TPW_gep_untreated, 2, function(x){
+  (x - mean(x)) / sd(x)
+})
+FC_normalized <- apply(fold_changes, 2, function(x){
+  (x - mean(x)) / sd(x)
+})
 
+#boxplot of normalized untreated values
+par(oma = c(1, 1, 1, 8), xpd = "TRUE")
+boxplot(untreated_normalized, xaxt = "n", ylab = "Gene expression profile", vertical =  T, 
+        main = "Normalized gene expression profile of untreated NCI60 celllines", 
+        boxcol = color_vector_drug)
+title(xlab = "Samples", line = 1.0)
+legend(x = 860, y = 3.4, legend = names(color_palette_drug), col = color_palette_drug, pch = 19)
 
-#PCA
-pca <- prcomp(fold_changes)
-
-#color PCA according to drug 
-par(oma = c(1, 1, 1, 8))
-#PC1 and PC2
-plot(pca$rotation[,1], 
-     pca$rotation[,2], 
-     col = color_vector_drug, 
-     pch = 19, 
-     xlab = "PC1", 
-     ylab = "PC2", 
-     main = "PCA with FC of all samples")
-legend(x = 0.08, 
-       y = 0.143, 
-       legend = names(color_palette_drug), 
-       col = color_palette_drug, 
-       pch = 19, 
-       xpd = "TRUE")
-#PC2 and PC3
-plot(pca$rotation[,2], 
-     pca$rotation[,3], 
-     col = color_vector_drug, 
-     pch = 19, xlab = "PC2", 
-     ylab = "PC3", 
-     main = "PCA with FC of all samples")
-legend(x = 0.16, 
-       y = 0.096, 
-       legend = names(color_palette_drug), 
-       col = color_palette_drug, 
-       pch = 19, 
-       xpd = "TRUE")
-
-#Color PCA according to cancertype
-par(oma = c(1, 1, 1, 10))
-#PC1 and PC2
-plot(pca$rotation[,1], 
-     pca$rotation[,2], 
-     col = color_vector_cancertype, 
-     pch = 19, xlab = "PC1", 
-     ylab = "PC2", 
-     main = "PCA with FC of all samples")
-legend(x = 0.09, 
-       y = 0.1, 
-       legend = names(color_palette_cancertype), 
-       col = color_palette_cancertype, 
-       pch = 19, 
-       xpd = "TRUE")
-
-rm(pca)
 
 
 #Density plot of all celllines and drugs, in black treated, red untreated
@@ -145,12 +119,67 @@ legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), 
 
 
 
+#PCA
+pca <- prcomp(FC_normalized)
+
+#color PCA according to drug 
+par(oma = c(1, 1, 1, 8), mfrow = c(2, 2)) #mfrow to create multiple plots
+#PC1 and PC2
+plot(pca$rotation[,1], 
+     pca$rotation[,2], 
+     col = color_vector_drug, 
+     pch = 19, 
+     xlab = "PC1", 
+     ylab = "PC2")
+#PC2 and PC3
+plot(pca$rotation[,2], 
+     pca$rotation[,3], 
+     col = color_vector_drug, 
+     pch = 19, xlab = "PC2", 
+     ylab = "PC3")
+#create legend on the right side
+legend(x = 0.07, 
+       y = 0.096, 
+       legend = names(color_palette_drug), 
+       col = color_palette_drug, 
+       pch = 19, 
+       xpd = "TRUE",
+       cex = 0.9)
+#Title: mtext = margin text, side = 3 (upside)
+mtext("Coloring according to drug", side = 3, line = -2, outer = TRUE)
+
+#Color PCA according to cancertype
+#PC1 and PC2
+plot(pca$rotation[,1], 
+     pca$rotation[,2], 
+     col = color_vector_cancertype, 
+     pch = 19, xlab = "PC1", 
+     ylab = "PC2")
+#PC2 and PC3
+plot(pca$rotation[,2], 
+     pca$rotation[,3], 
+     col = color_vector_cancertype, 
+     pch = 19, xlab = "PC2", 
+     ylab = "PC3")
+legend(x = 0.07, 
+       y = 0.096, 
+       legend = names(color_palette_cancertype), 
+       col = color_palette_cancertype, 
+       pch = 19, 
+       xpd = "TRUE",
+       cex = 0.9)
+mtext("Coloring according to cancertype", side = 3, line = -18, outer = TRUE)
+
+rm(pca)
+
+
+
 #Barplot of genes with highest mean FC over all samples
 mean_FC <- apply(fold_changes, 1, mean)
 
 #sort: starting with highest mean FC, abs() makes all negative values positive
 mean_FC <- sort(abs(mean_FC), decreasing = TRUE)
-par(oma = c(10, 1, 1, 1))
+par(oma = c(10, 1, 1, 1), mfrow = c(1,1))
 barplot(mean_FC[1:20], main = "Genes with highest mean FC",  ylab = "mean FC", las = 2) #las = 2: vertical x labels
 
 #alternative: calculating the mean FC over positive FC values
@@ -184,24 +213,6 @@ for (i in 1:9){ #for each cancer type
 }
 "
 
-#Boxplot showed batch effect --> we have to normalize the data
-# each sample should have mean 0 and sd 1
-untreated_normalized <- apply(NCI_TPW_gep_untreated, 2, function(x){
-  (x - mean(x)) / sd(x)
-})
-
-#boxplot of normalized untreated values
-par(oma = c(1, 1, 1, 8), xpd = "TRUE")
-boxplot(untreated_normalized, xaxt = "n", ylab = "Gene expression profile", vertical =  T, 
-        main = "Boxplot: normalized gene expression profile of untreated NCI60 celllines", 
-        boxcol = color_vector_drug)
-title(xlab = "Celllines treated with different drugs", line = 1.0)
-legend(x = 860, y = 3.4, legend = names(color_palette_drug), col = color_palette_drug, pch = 19)
-
-
-FC_normalized <- apply(fold_changes, 2, function(x){
-  (x - mean(x)) / sd(x)
-})
 
 
 
