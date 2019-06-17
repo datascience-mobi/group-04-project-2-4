@@ -63,12 +63,12 @@ cellline_clustering <- hclust(dist(heatmap_data), method = "ward.D2")
 as.dendrogram(cellline_clustering) %>%
   plot(horiz = TRUE)
 #cutree: cuts the tree to generate k clusters
-cellline_groups <- cutree(tree = as.dendrogram(cellline_clustering), k = 9)
+cellline_groups <- cutree(tree = as.dendrogram(cellline_clustering), k = 3)
 
 #compare clusters of celllines with cancertype in heatmap 
-cellline_cancertype <- sapply(names(cellline_groups), function(x){ #for each erlotinib cell line
+cellline_cancertype <- as.data.frame(sapply(names(cellline_groups), function(x){ #for each erlotinib cell line
   unname(cellline_annotation[which(cellline_annotation$Cell_Line_Name == x), 2])
-})
+}))
 cellline_clusters <- as.data.frame(cbind(cellline_groups, cellline_cancertype))
 colnames(cellline_clusters) <- c("Ward.D2 cluster Celllines", "Cancertype cluster")
 
@@ -85,29 +85,38 @@ colnames(pathway_groups) <- "Ward.D2 cluster Pathways"
 
 #generate heatmap with colored bars according to clusters
 pheatmap(t(heatmap_data),
+         clustering_method = "ward.D2",
          annotation_col = cellline_clusters,
          annotation_row = pathway_groups,
          #annotation_colors = color
-         )
+         cutree_rows = 3,
+         cutree_cols = 3)
 
 
 #Heatmap with Progeny
+library(progeny)
 progeny_heatmap <- progeny(e_foldchange_normalized)
 
 #cluster celllines:
 cellline_clustering <- hclust(dist(progeny_heatmap), method = "ward.D2")
-cellline_groups <- as.data.frame(cutree(tree = as.dendrogram(cellline_clustering), k = 9))
+cellline_groups <- as.data.frame(cutree(tree = as.dendrogram(cellline_clustering), k = 3))
 cellline_clusters <- as.data.frame(cbind(cellline_groups, cellline_cancertype))
 colnames(cellline_clusters) <- c("Ward.D2 cluster Celllines", "Cancertype cluster")
 #cluster pathways:
 pathway_clustering <- hclust(dist(t(progeny_heatmap)), method = "ward.D2") 
-pathway_groups <- as.data.frame(cutree(tree = as.dendrogram(pathway_clustering), k = 4))
+pathway_groups <- as.data.frame(cutree(tree = as.dendrogram(pathway_clustering), k = 2))
 colnames(pathway_groups) <- "Ward.D2 cluster Pathways"
 
 pheatmap(t(progeny_heatmap),
+         clustering_method = "ward.D2",
          annotation_col = cellline_clusters,
-         annotation_row = pathway_groups)
+         annotation_row = pathway_groups,
+         cutree_rows = 2,
+         cutree_cols = 3)
 
+#Elbow plot
+library(factoextra)
+fviz_nbclust(progeny_heatmap, FUN = hcut, method = "wss")
 
 #Notes Juli
 #library("ggpubr") für Signifikanztests
