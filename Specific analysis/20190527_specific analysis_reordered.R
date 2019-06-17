@@ -132,6 +132,22 @@ ggplot(data=MA)+
   ylab("log fold change")+
   geom_text(data=MA_biomarkers, aes(A, M, label=rownames(MA_biomarkers)))
 
+#Venn Diagram with biomarkers of volcano plot and MA plot
+install.packages("VennDiagram")
+library(VennDiagram)
+biomarkers_MA_vector <- rownames(MA_labeled)
+venn.plot <- venn.diagram(
+  x = list(
+    "Volcano Plot" = biomarkers,
+    "MA Plot" = biomarkers_MA_vector
+     ),
+  filename = NULL, fill = c("blue", "red")
+  );
+grid.newpage();
+grid.draw(venn.plot);
+
+
+
 # boxplot of foldchange of biomarkers 
 # create a matrix foldchange_biomarkers, with the foldchange only of the biomarkers
 foldchange_biomarkers <- sapply(biomarkers, function(x){
@@ -149,26 +165,17 @@ e_treated_biomarkers <- sapply(biomarkers, function(x){
 e_untreated_biomarkers <- sapply(biomarkers, function(x){
   e_untreated[x, ]
 }) 
+colnames(e_untreated_biomarkers) <- paste(colnames(e_untreated_biomarkers),"Untreated",
+                                          sep = "_") #add untreated to colnames
 
 # create a matrix, which contains gene expression of treated and untreated and sort it after colnames
 e_treated_untreated_biomarkers <- cbind (e_treated_biomarkers, e_untreated_biomarkers)
 e_treated_untreated_biomarkers <- e_treated_untreated_biomarkers[,order(colnames(e_treated_untreated_biomarkers))]
+colnames_e_treated_untreated_biomarkers <- colnames(e_treated_untreated_biomarkers)
 
 # boxplot, where treated and untreated are right next to each other 
 boxplot(e_treated_untreated_biomarkers, ylab= "gene expression (log2)", 
         main= "boxplot of gene expression of the biomarkers", las=2)
 
-#boxplot with ggplot, as it has more functions: does not work 
-e_treated_biomarkers <- as.data.frame(e_treated_biomarkers)
-e_untreated_biomarkers <- as.data.frame(e_untreated_biomarkers)
-library(ggplot2)
-library(gridExtra)
-boxplot_treated <- ggplot(e_treated_biomarkers) +
-  geom_boxplot (aes(x=Var2,y=value,fill=Var2))+
-  facet_grid(~Var1)
-
-boxplot_untreated <- ggplot(e_untreated_biomarkers) +
-  geom_boxplot(aes(x=Var2,y=value,fill=Var2))+
-  facet_grid(~Var1)
-
-grid.arrange(boxplot_treated, boxplot_untreated)
+color_boxplot_e_untreated/treated <- sapply(colnames(e_treated_untreated_biomarkers), function(x) {
+  ifelse(colnames(e_treated_untreated_biomarkers)[x] == grep ("Untreated",colnames_e_treated_untreated_biomarkers, value = TRUE), "green", "red")}
