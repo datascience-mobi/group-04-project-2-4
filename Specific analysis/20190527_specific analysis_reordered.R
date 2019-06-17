@@ -76,7 +76,7 @@ EnhancedVolcano(statistics_values,
                 title = "Volcano plot of all genes",
                 pCutoff = 10e-15, #threshold for coloring significant ones
                 FCcutoff = 1, #threshold for coloring high FC
-                transcriptPointSize = 2,
+                transcriptPointSize = 3,
                 transcriptLabSize = 4.0)
 
 #further questions: what "do" the red genes? are they involved in certain pathways?
@@ -171,11 +171,13 @@ colnames(e_untreated_biomarkers) <- paste(colnames(e_untreated_biomarkers),"Untr
 # create a matrix, which contains gene expression of treated and untreated and sort it after colnames
 e_treated_untreated_biomarkers <- cbind (e_treated_biomarkers, e_untreated_biomarkers)
 e_treated_untreated_biomarkers <- e_treated_untreated_biomarkers[,order(colnames(e_treated_untreated_biomarkers))]
-colnames_e_treated_untreated_biomarkers <- colnames(e_treated_untreated_biomarkers)
+
+# create a color vector, where untreated samples are green and treated ones are red
+color_boxplot_e_treated_untreated <- sapply(colnames(e_treated_untreated_biomarkers), function(x) {
+  ifelse(x %in% grep ("Untreated",colnames_e_treated_untreated_biomarkers, value = TRUE),
+         "green", "red")})
 
 # boxplot, where treated and untreated are right next to each other 
 boxplot(e_treated_untreated_biomarkers, ylab= "gene expression (log2)", 
-        main= "boxplot of gene expression of the biomarkers", las=2)
+        main= "boxplot of gene expression of the biomarkers", las=2, col= color_boxplot_e_treated_untreated)
 
-color_boxplot_e_untreated/treated <- sapply(colnames(e_treated_untreated_biomarkers), function(x) {
-  ifelse(colnames(e_treated_untreated_biomarkers)[x] == grep ("Untreated",colnames_e_treated_untreated_biomarkers, value = TRUE), "green", "red")}

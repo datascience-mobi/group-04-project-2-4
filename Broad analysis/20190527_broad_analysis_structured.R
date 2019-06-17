@@ -154,6 +154,23 @@ barplot(sort(mean_FC, decreasing = TRUE) [1:20], main = "Genes with highest mean
 #--> Result: nearly the same genes (little change in order) with directly calculating the mean or calculating 
 #the mean of positive FC values
 
+#boxplot of FC of genes with highest mean FC
+meanFC_samples_with_highest_mean_FC <- sort(mean_FC, decreasing = TRUE)[1:20]
+FC_samples_with_highest_mean_FC <- sapply(names(meanFC_samples_with_highest_mean_FC), function(x){
+  fold_change_numbers[which(x == rownames(fold_change_numbers)),]
+})
+boxplot(FC_samples_with_highest_mean_FC, ylab= "foldchange", 
+        main= "boxplot of foldchange of the genes with highest mean FC", las=2)
+
+#boxplot of absolute FC of genes with highest mean FC
+meanFC_samples_with_highest_mean_FC <- sort(mean_FC, decreasing = TRUE)[1:20]
+FC_samples_with_highest_mean_FC <- sapply(names(meanFC_samples_with_highest_mean_FC), function(x){
+  abs(fold_change_numbers[which(x == rownames(fold_change_numbers)),])
+})
+
+boxplot(FC_samples_with_highest_mean_FC, ylab= "foldchange", 
+        main= "boxplot of absolute foldchange of the genes with highest mean FC", las=2)
+
 
 
 #TO DO:
