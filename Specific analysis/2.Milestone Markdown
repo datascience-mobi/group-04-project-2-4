@@ -1,3 +1,27 @@
+---
+title: "2. Milestone Markdown"
+output: html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r, include=FALSE}
+#Load required packages
+library(knitr)
+```
+
+```{r setup, include=FALSE} 
+#code and output not included in final file
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+# 2. Milestone Markdown
+
+##Data preparation 
+###find samples treated by erlotinib and normalize matrix
+
+```{r}
 #new matrix only with samples/columns treated with erlotinib  (e=erlotinib)
 e_treated <- NCI_TPW_gep_treated[,grep ("erlotinib", colnames(NCI_TPW_gep_treated))]
 e_untreated <- NCI_TPW_gep_untreated[,grep ("erlotinib", colnames(NCI_TPW_gep_untreated))]
@@ -13,9 +37,11 @@ colnames(e_foldchange) <- cellline
 e_foldchange_normalized <- apply(e_foldchange, 2, function(x){
   (x - mean(x)) / sd(x)
 })
+```
 
+## table of 15 cell lines with highest variance to show most regulated cell lines
 
-# table of 15 cell lines with highest variance to show most regulated cell lines
+```{r}
 #select 15 cell lines with highest variance (greater than 75% quantile, sorted by decreasing value)
 var_cell_line <- apply(e_foldchange, 2, var)
 cell_line_var_greater_75quantile <- sort(var_cell_line [which (abs(var_cell_line) > quantile(abs(var_cell_line), 0.75))], decreasing = TRUE)
@@ -32,8 +58,11 @@ cancertypes_top15 <- as.data.frame(sapply(table_cell_lines_var_top15[ , 1], func
 table_cell_lines_var_top15 <- cbind(table_cell_lines_var_top15, cancertypes_top15)
 rm(cancertypes_top15)
 colnames(table_cell_lines_var_top15) <- c("Cellline", "Variance", "Cancertype")
+```
 
-#PCA to show most regulated cell lines
+
+##PCA to show most regulated cell lines
+```{r}
 #PCA with transformed matrix (each point represents a sample):
 pca <- prcomp(t(e_foldchange_normalized))
 plot(pca$rotation[,1], pca$rotation[,2])
@@ -52,8 +81,11 @@ fviz_pca_var(pca, col.var ="contrib", gradient.cols = c("#00AFBB", "#E7B800", "#
 results.genes <- get_pca_var(pca)
 genes_pca_highest_contribution <- results.genes$contrib '
 
+```
 
-#Volcano plot
+##Volcano plot of all genes
+
+```{r}
 #mean of gene expression of each gene over all cell lines
 e_foldchange_mean_over_cell_lines <- rowMeans(e_foldchange) #equal to e_treated_mean_over_cell_lines - e_untreated_mean_over_cell_line
 
@@ -79,21 +111,25 @@ EnhancedVolcano(statistics_values,
                 transcriptPointSize = 3,
                 transcriptLabSize = 4.0)
 
-#further questions: what "do" the red genes? are they involved in certain pathways?
-#maybe we could color the genes in the volcano plot according to pathways (after milestone 4)
+```
 
+
+## Density plot with biomarkers identified by volcano plot
+```{r}
 #save the "red" genes seen in the volcano plot in a vector for further analysis
 biomarkers <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 1 
                                                    & statistics_values[, 2] < 10e-15)]
-
 
 #Density plot with these genes (untreated vs. treated)
 plot(density(e_treated[biomarkers, ]), "Density plot of gene expression", col = "red")
 lines(density(e_untreated[biomarkers, ]), col = "black")
 legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), pch = 15)
 
+```
 
-#MA-Plot
+
+##MA-Plot of all genes 
+```{r}
 #install package and load ggplot2 and ggrepel
 library(ggplot2)
 library(ggrepel)
@@ -119,6 +155,10 @@ ggplot(data=MA)+
   geom_text(data=MA_labeled, aes(A, M, label=rownames(MA_labeled)))
 
 
+```
+
+## Venn Diagram
+```{r}
 #Venn Diagram with biomarkers of volcano plot and MA plot
 install.packages("VennDiagram")
 library(VennDiagram)
@@ -132,10 +172,10 @@ venn.plot <- venn.diagram(
   );
 grid.newpage();
 grid.draw(venn.plot);
+```
 
-
-
-# boxplot of foldchange of biomarkers 
+## boxplot of foldchange of biomarkers
+```{r}
 # create a matrix foldchange_biomarkers, with the foldchange only of the biomarkers
 foldchange_biomarkers <- sapply(biomarkers, function(x){
   e_foldchange[x, ]
@@ -167,4 +207,8 @@ color_boxplot_e_treated_untreated <- sapply(colnames(e_treated_untreated_biomark
 # boxplot, where treated and untreated are right next to each other 
 boxplot(e_treated_untreated_biomarkers, ylab= "gene expression (log2)", 
         main= "boxplot of gene expression of the biomarkers", las=2, col= color_boxplot_e_treated_untreated)
+
+```
+
+
 
