@@ -90,7 +90,8 @@ pheatmap(t(heatmap_data),
          annotation_row = pathway_groups,
          #annotation_colors = color
          cutree_rows = 3,
-         cutree_cols = 3)
+         cutree_cols = 3,
+         main = "Affected pathways by erlotinib")
 
 
 #Heatmap with Progeny
@@ -112,7 +113,8 @@ pheatmap(t(progeny_heatmap),
          annotation_col = cellline_clusters,
          annotation_row = pathway_groups,
          cutree_rows = 2,
-         cutree_cols = 3)
+         cutree_cols = 3,
+         main = "Affected pathways by erlotinib (progeny)")
 
 #Elbow plot
 library(factoextra)

@@ -1,0 +1,164 @@
+---
+title: "Project 2 Group 4"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+## von Anna, Ann-Sophie und Jana
+
+```{r, include=FALSE}
+#Load required packages
+library(knitr)
+```
+
+```{r setup, include=FALSE} 
+#code and output not included in final file
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+
+## Load data
+
+```{r }
+NCI_TPW_gep_treated <- readRDS(url("https://ndownloader.figshare.com/files/14720180?private_link=db1411debcfbe2618d2f"))
+NCI_TPW_gep_untreated <- readRDS(url("https://ndownloader.figshare.com/files/14720183?private_link=db1411debcfbe2618d2f"))
+NCI_TPW_metadata <- read.delim("https://ndownloader.figshare.com/files/14720186?private_link=db1411debcfbe2618d2f")
+NegLogGI50 <- readRDS(url("https://ndownloader.figshare.com/files/14720210?private_link=074e0120fe5e682f3d14"))
+CCLE_basalexpression <- readRDS(url("https://ndownloader.figshare.com/files/14770127?private_link=fc0c71246dc192982a3c"))
+CCLE_copynumber <- readRDS(url("https://ndownloader.figshare.com/files/14770130?private_link=fc0c71246dc192982a3c"))
+CCLE_mutations <- readRDS(url("https://ndownloader.figshare.com/files/14770133?private_link=fc0c71246dc192982a3c"))
+cellline_annotation <-read.delim("https://ndownloader.figshare.com/files/14768981?private_link=efb6a529eaf2d4dc6432")
+drug_annotation <- read.delim("https://ndownloader.figshare.com/files/14768984?private_link=efb6a529eaf2d4dc6432")
+```
+
+# 1. Broad analysis
+
+### Data preparation and annotation
+
+**Calculate fold change** due to drug treatment
+```{r }
+fold_changes <- NCI_TPW_gep_treated - NCI_TPW_gep_untreated
+fold_changes <- as.data.frame(fold_changes)
+```
+
+**Renaming of cellline SK-MEL-2**
+Problem: name of cellline SK-MEL-2 is part of cellline SK-MEL_28  
+Solution: rename SK-MEL-2 to SK-MEL-2_ (first define it as new factor level)  
+
+```{r }
+levels(cellline_annotation$Cell_Line_Name) <- c(levels(cellline_annotation$Cell_Line_Name), "SK-MEL-2_")
+cellline_annotation[33, 1] <- "SK-MEL-2_"
+#delete level SK-MEL-2 (otherwise we would have 62, instead of 61 levels)
+cellline_annotation$Cell_Line_Name <- factor(as.character(cellline_annotation$Cell_Line_Name))
+```
+
+**Create annotation:** 
+A matrix is created, which contains for each sample name the drug, cellline and cancertype    
+
+1. Drug
+```{r }
+sample_drug <- as.data.frame(sapply(levels(drug_annotation$Drug), grepl, colnames(fold_changes), ignore.case = TRUE))
+  #creates table with TRUE and FALSE for each sample and drug
+rownames(sample_drug) <- colnames(fold_changes)
+drugs <- as.vector(apply(sample_drug, 1, function(x){
+  colnames(sample_drug[which(x)])
+}))
+```
+
+2. Cellline
+```{r }
+sample_cellline <- as.data.frame(sapply(levels(cellline_annotation$Cell_Line_Name), grepl, colnames(fold_changes), ignore.case = TRUE)) 
+  #creates table with TRUE and FALSE for each sample and cellline
+rownames(sample_cellline) <- colnames(fold_changes)
+cellline <- as.vector(unlist(apply(sample_cellline, 1, function(x){
+  colnames(sample_cellline[which(x)])
+})))
+
+annotation <- cbind("Drug" = drugs, "Cellline" = cellline)
+rownames(annotation) <- colnames(fold_changes)
+```
+
+3. Cancertype
+```{r }
+cancertype <- sapply(annotation[, 2], function(x){ #2nd column contains cellline annotation of samples
+  cellline_annotation$Cancer_type[cellline_annotation$Cell_Line_Name == x]
+})
+cancertype <- as.vector(unlist(cancertype))
+
+annotation <- cbind(annotation, "Cancertype" = cancertype)
+rm(drugs, sample_drug, cellline, sample_cellline, cancertype)
+```
+
+**Coloring:**   
+Create a vector which assigns each drug or each cancertype a color
+
+1. According to drug (color_vector_all_drugs)
+```{r }
+#define a color palette with 15 chosen colors
+color_palette_drug <- c("aquamarine", "brown", "forestgreen", "slategrey", "chartreuse", "darkgoldenrod1", "cadetblue","purple", "firebrick1", "deepskyblue", "gold", "violetred4", "deeppink", "plum2", "blue" )
+names(color_palette_drug) <- levels(drug_annotation$Drug)
+  
+#create vector containing a color name for each sample according to drug
+color_vector_drug <- sapply(rownames(annotation), function(x){
+  unname(color_palette_drug[annotation[x, 1]]) #first column of annotation contains drug
+})
+```
+
+2. According to cancertype (color_vector_cancertype)
+```{r }
+#define a color palette with 9 chosen colors
+color_palette_cancertype <- c("aquamarine", "brown", "forestgreen", "chartreuse", "darkgoldenrod1", "cadetblue","purple", "firebrick1", "deepskyblue")
+names(color_palette_cancertype) <- levels(cellline_annotation$Cancer_type)
+
+#create vector containing a color name for each sample according to cancertype
+color_vector_cancertype <- sapply(rownames(annotation), function(x){
+  unname(color_palette_cancertype[annotation[x, 3]]) #3rd columns of annotation contains cancertype 
+})
+```
+
+
+### Boxplot
+
+Create a boxplot to show the distribution of the foldchanges of all genes in one box per sample
+```{r warning = FALSE }
+#par makes spaces outside the plot larger, xaxt: removes labels on x-axis
+#title() used to move xlab nearer to the axis
+par(oma = c(1, 1, 1, 8), xpd = "TRUE")
+boxplot(NCI_TPW_gep_untreated, 
+        xaxt = "n", 
+        ylab = "Gene expression profile", 
+        vertical =  T, 
+        main = "Gene expression profile of untreated NCI60 celllines")
+title(xlab = "Samples", line = 1.0)
+```
+
+Batch effect was seen --> corresponding to drugs?
+
+
+**Color plot according to drugs**
+```{r}
+boxplot(NCI_TPW_gep_untreated, 
+        xaxt = "n", 
+        ylab = "Gene expression profile", 
+        vertical =  T, 
+        main = "Gene expression profile of untreated NCI60 celllines", 
+        boxcol = color_vector_drug)
+title(xlab = "Samples", line = 1.0)
+legend(x = 860, 
+       y = 14.5, 
+       legend = names(color_palette_drug), 
+       col = color_palette_drug, 
+       pch = 19)
+```
+
+
+
+
+# 2. Specific analysis: Erlotinib
+
+
+
+
