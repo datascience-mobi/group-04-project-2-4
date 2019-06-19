@@ -1,9 +1,9 @@
 ---
 title: "Project 2 Group 4"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 ---
 
 ## von Anna, Ann-Sophie und Jana
@@ -11,6 +11,10 @@ output:
 ```{r, include=FALSE}
 #Load required packages
 library(knitr)
+#for pdf output load tinytex
+#install.packages("tinytex")
+#tinytex::install_tinytex()
+library(tinytex)
 ```
 
 ```{r setup, include=FALSE} 
@@ -26,7 +30,7 @@ knitr::opts_chunk$set(cache = TRUE)
 NCI_TPW_gep_treated <- readRDS(url("https://ndownloader.figshare.com/files/14720180?private_link=db1411debcfbe2618d2f"))
 NCI_TPW_gep_untreated <- readRDS(url("https://ndownloader.figshare.com/files/14720183?private_link=db1411debcfbe2618d2f"))
 NCI_TPW_metadata <- read.delim("https://ndownloader.figshare.com/files/14720186?private_link=db1411debcfbe2618d2f")
-NegLogGI50 <- readRDS(url("https://ndownloader.figshare.com/files/14720210?private_link=074e0120fe5e682f3d14"))
+NegLogGI50 <- readRDS(url("https://ndownloader.figshare.com/files/ 14720210?private_link=074e0120fe5e682f3d14"))
 CCLE_basalexpression <- readRDS(url("https://ndownloader.figshare.com/files/14770127?private_link=fc0c71246dc192982a3c"))
 CCLE_copynumber <- readRDS(url("https://ndownloader.figshare.com/files/14770130?private_link=fc0c71246dc192982a3c"))
 CCLE_mutations <- readRDS(url("https://ndownloader.figshare.com/files/14770133?private_link=fc0c71246dc192982a3c"))
@@ -49,10 +53,12 @@ Problem: name of cellline SK-MEL-2 is part of cellline SK-MEL_28
 Solution: rename SK-MEL-2 to SK-MEL-2_ (first define it as new factor level)  
 
 ```{r }
-levels(cellline_annotation$Cell_Line_Name) <- c(levels(cellline_annotation$Cell_Line_Name), "SK-MEL-2_")
+levels(cellline_annotation$Cell_Line_Name) <- c(levels(cellline_annotation$Cell_Line_Name), 
+                                                "SK-MEL-2_")
 cellline_annotation[33, 1] <- "SK-MEL-2_"
 #delete level SK-MEL-2 (otherwise we would have 62, instead of 61 levels)
-cellline_annotation$Cell_Line_Name <- factor(as.character(cellline_annotation$Cell_Line_Name))
+cellline_annotation$Cell_Line_Name <- factor(as.character(
+  cellline_annotation$Cell_Line_Name))
 ```
 
 **Create annotation:** 
@@ -60,7 +66,8 @@ A matrix is created, which contains for each sample name the drug, cellline and 
 
 1. Drug
 ```{r }
-sample_drug <- as.data.frame(sapply(levels(drug_annotation$Drug), grepl, colnames(fold_changes), ignore.case = TRUE))
+sample_drug <- as.data.frame(sapply(levels(drug_annotation$Drug), grepl, 
+                                    colnames(fold_changes), ignore.case = TRUE))
   #creates table with TRUE and FALSE for each sample and drug
 rownames(sample_drug) <- colnames(fold_changes)
 drugs <- as.vector(apply(sample_drug, 1, function(x){
@@ -70,7 +77,8 @@ drugs <- as.vector(apply(sample_drug, 1, function(x){
 
 2. Cellline
 ```{r }
-sample_cellline <- as.data.frame(sapply(levels(cellline_annotation$Cell_Line_Name), grepl, colnames(fold_changes), ignore.case = TRUE)) 
+sample_cellline <- as.data.frame(sapply(levels(cellline_annotation$Cell_Line_Name), grepl, 
+                                        colnames(fold_changes), ignore.case = TRUE)) 
   #creates table with TRUE and FALSE for each sample and cellline
 rownames(sample_cellline) <- colnames(fold_changes)
 cellline <- as.vector(unlist(apply(sample_cellline, 1, function(x){
@@ -83,7 +91,8 @@ rownames(annotation) <- colnames(fold_changes)
 
 3. Cancertype
 ```{r }
-cancertype <- sapply(annotation[, 2], function(x){ #2nd column contains cellline annotation of samples
+cancertype <- sapply(annotation[, 2], function(x){ 
+  #2nd column contains cellline annotation of samples
   cellline_annotation$Cancer_type[cellline_annotation$Cell_Line_Name == x]
 })
 cancertype <- as.vector(unlist(cancertype))
@@ -98,7 +107,10 @@ Create a vector which assigns each drug or each cancertype a color
 1. According to drug (color_vector_all_drugs)
 ```{r }
 #define a color palette with 15 chosen colors
-color_palette_drug <- c("aquamarine", "brown", "forestgreen", "slategrey", "chartreuse", "darkgoldenrod1", "cadetblue","purple", "firebrick1", "deepskyblue", "gold", "violetred4", "deeppink", "plum2", "blue" )
+color_palette_drug <- c("aquamarine", "brown", "forestgreen", "slategrey", 
+                        "chartreuse", "darkgoldenrod1", "cadetblue","purple", 
+                        "firebrick1", "deepskyblue", "gold", "violetred4", 
+                        "deeppink", "plum2", "blue" )
 names(color_palette_drug) <- levels(drug_annotation$Drug)
   
 #create vector containing a color name for each sample according to drug
@@ -110,7 +122,9 @@ color_vector_drug <- sapply(rownames(annotation), function(x){
 2. According to cancertype (color_vector_cancertype)
 ```{r }
 #define a color palette with 9 chosen colors
-color_palette_cancertype <- c("aquamarine", "brown", "forestgreen", "chartreuse", "darkgoldenrod1", "cadetblue","purple", "firebrick1", "deepskyblue")
+color_palette_cancertype <- c("aquamarine", "brown", "forestgreen", "chartreuse", 
+                              "darkgoldenrod1", "cadetblue","purple", 
+                              "firebrick1", "deepskyblue")
 names(color_palette_cancertype) <- levels(cellline_annotation$Cancer_type)
 
 #create vector containing a color name for each sample according to cancertype
@@ -119,6 +133,13 @@ color_vector_cancertype <- sapply(rownames(annotation), function(x){
 })
 ```
 
+### Density plot 
+To show the distribution of all gene expression values of all samples, a density plot was drawn. The black line contains all values measured for control samples (untreated). In red the distribution of the gene expressiion of all samples treated with 15 drugs is shown.
+```{r }
+plot(density(NCI_TPW_gep_untreated), "Density plot of gene expression")
+lines(density(NCI_TPW_gep_treated), col = "red")
+legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), pch = 15)
+```
 
 ### Boxplot
 
@@ -140,6 +161,7 @@ Batch effect was seen --> corresponding to drugs?
 
 **Color plot according to drugs**
 ```{r}
+par(oma = c(1, 1, 1, 8), xpd = "TRUE")
 boxplot(NCI_TPW_gep_untreated, 
         xaxt = "n", 
         ylab = "Gene expression profile", 
@@ -148,11 +170,97 @@ boxplot(NCI_TPW_gep_untreated,
         boxcol = color_vector_drug)
 title(xlab = "Samples", line = 1.0)
 legend(x = 860, 
-       y = 14.5, 
+       y = 15.5, 
        legend = names(color_palette_drug), 
        col = color_palette_drug, 
        pch = 19)
 ```
+
+
+**Normalization** of data is necessary
+```{r warning = FALSE}
+#each sample should have mean 0 and sd 1
+untreated_normalized <- apply(NCI_TPW_gep_untreated, 2, function(x){
+  (x - mean(x)) / sd(x)
+})
+FC_normalized <- apply(fold_changes, 2, function(x){
+  (x - mean(x)) / sd(x)
+})
+
+#boxplot of normalized untreated values
+par(oma = c(1, 1, 1, 8), xpd = "TRUE")
+boxplot(untreated_normalized, 
+        xaxt = "n", 
+        ylab = "Gene expression profile", 
+        vertical =  T, 
+        main = "Normalized gene expression profile of untreated NCI60 celllines", 
+        boxcol = color_vector_drug)
+title(xlab = "Samples", line = 1.0)
+legend(x = 860, 
+       y = 3.9, 
+       legend = names(color_palette_drug), 
+       col = color_palette_drug, 
+       pch = 19)
+```
+
+### PCA
+```{r warning = FALSE}
+pca <- prcomp(FC_normalized)
+
+#color PCA according to drug 
+par(oma = c(1, 1, 1, 8), mfrow = c(2, 2)) #mfrow to create multiple plots
+#PC1 and PC2
+plot(pca$rotation[,1], 
+     pca$rotation[,2], 
+     col = color_vector_drug, 
+     pch = 19, 
+     xlab = "PC1", 
+     ylab = "PC2")
+#PC2 and PC3
+plot(pca$rotation[,2], 
+     pca$rotation[,3], 
+     col = color_vector_drug, 
+     pch = 19, xlab = "PC2", 
+     ylab = "PC3")
+#create legend on the right side
+legend(x = 0.07, 
+       y = 0.096, 
+       legend = names(color_palette_drug), 
+       col = color_palette_drug, 
+       pch = 19, 
+       xpd = "TRUE",
+       cex = 0.9)
+#Title: mtext = margin text, side = 3 (upside)
+mtext("Coloring according to drug", side = 3, line = -2, outer = TRUE)
+
+#Color PCA according to cancertype
+#PC1 and PC2
+plot(pca$rotation[,1], 
+     pca$rotation[,2], 
+     col = color_vector_cancertype, 
+     pch = 19, xlab = "PC1", 
+     ylab = "PC2")
+#PC2 and PC3
+plot(pca$rotation[,2], 
+     pca$rotation[,3], 
+     col = color_vector_cancertype, 
+     pch = 19, xlab = "PC2", 
+     ylab = "PC3")
+legend(x = 0.07, 
+       y = 0.096, 
+       legend = names(color_palette_cancertype), 
+       col = color_palette_cancertype, 
+       pch = 19, 
+       xpd = "TRUE",
+       cex = 0.9)
+mtext("Coloring according to cancertype", side = 3, line = -15, outer = TRUE)
+
+rm(pca)
+```
+
+### Biomarkers
+
+Barplot and Boxplot
 
 
 

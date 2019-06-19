@@ -176,20 +176,45 @@ rm(pca)
 
 #Barplot of genes with highest mean FC over all samples
 mean_FC <- apply(fold_changes, 1, mean)
-
 #sort: starting with highest mean FC, abs() makes all negative values positive
 mean_FC <- sort(abs(mean_FC), decreasing = TRUE)
+
 par(oma = c(10, 1, 1, 1), mfrow = c(1,1))
-barplot(mean_FC[1:20], main = "Genes with highest mean FC",  ylab = "mean FC", las = 2) #las = 2: vertical x labels
+barplot(mean_FC[1:20], 
+        main = "Genes with highest mean FC",  
+        ylab = "mean FC", 
+        las = 2) #las = 2: vertical x labels
 
 #alternative: calculating the mean FC over positive FC values
-mean_FC <- apply(fold_changes, 1, function(x){
-  mean(abs(x)) 
-})
+mean_FC_abs <- apply(abs(fold_changes), 1, mean)
+mean_FC_abs <- sort(mean_FC_abs, decreasing = TRUE)
 par(oma = c(10, 1, 1, 1))
-barplot(sort(mean_FC, decreasing = TRUE) [1:20], main = "Genes with highest mean FC",  ylab = "mean FC", las = 2)
+barplot(mean_FC_abs[1:20], 
+        main = "Genes with highest mean in absolute FC",  
+        ylab = "mean FC", 
+        las = 2)
 #--> Result: nearly the same genes (little change in order) with directly calculating the mean or calculating 
 #the mean of positive FC values
+
+
+#boxplot of FC of genes with highest mean FC
+FC_samples_with_highest_mean_FC <- as.data.frame(sapply(names(mean_FC)[1:20], function(x){
+  fold_changes[which(x == rownames(fold_changes)),]
+}))
+boxplot(FC_samples_with_highest_mean_FC, 
+        ylab = "foldchange", 
+        main = "boxplot of foldchange of the genes with highest mean FC", 
+        las=2)
+
+#boxplot of absolute FC of genes with highest mean FC
+FC_samples_with_highest_mean_FC_abs <- as.data.frame(sapply(names(mean_FC)[1:20], function(x){
+  abs(fold_changes[which(x == rownames(fold_changes)),])
+}))
+
+boxplot(FC_samples_with_highest_mean_FC, 
+        ylab= "foldchange", 
+        main= "boxplot of absolute foldchange of the genes with highest mean FC", 
+        las=2)
 
 
 
