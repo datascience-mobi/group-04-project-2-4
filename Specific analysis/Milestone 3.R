@@ -27,7 +27,23 @@ plot(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",],
      main = "Erlotinib 24h")
 
 NegLogGI50_59_cellline_names <- colnames(NegLogGI50 [,-c (8,29)])
- text(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",], labels=NegLogGI50_59_cellline_names, pos =4)
+NegLogGI50_59_celllines_text <- apply(NegLogGI50_59_cellline_names,1, function (NegLogGI50_59_celllines_neg < -5.3 & e_foldchange_normalized < 0,text(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",], labels=NegLogGI50_59_cellline_names, pos =4,   ) 
+  {if(NegLogGI50_59_celllines_neg < -5.3 & e_foldchange_normalized < 0 = TRUE)
+    {text(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",], labels=NegLogGI50_59_cellline_names, pos =4)} 
+ else{} })
+  
+  NegLogGI50_59_cellline_names <- colnames(NegLogGI50 [,-c (8,29)])
+ sapply(NegLogGI50_59_cellline_names, function(x) {ifelse (NegLogGI50_59_celllines_neg < -5.3 & e_foldchange_normalized < 0)
+   text(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",], labels=NegLogGI50_59_cellline_names, pos =4)}) 
+  min
+
+ test <- function (x) {
+   ifelse (NegLogGI50_59_celllines_neg < -5.3 & e_foldchange_normalized < 0) 
+   text(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",], labels=NegLogGI50_59_cellline_names, pos =4)}
+ 
+ lapply (NegLogGI50_59_celllines_neg, FUN = test)
+ 
+ 
 # text(e_foldchange_normalized ["EGR1",], label=ifelse (e_foldchange_normalized ["EGR1",4] < -4,
 #as.character (NegLogGI50_59_cellline_names),''), pos =4)
  #läuft durch macht abe nichts 
@@ -37,7 +53,13 @@ legend(x = -3.8, y = 2,
        col = color_palette_cancertype, 
        pch = 19)
 
+#Pearson correlation
+res <- cor.test(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",], 
+     method = "pearson")
+res
+
+lm()
+
 'to do:
 nur spezifische Cellinien benennen
-pearson correlation
 linear regression'
