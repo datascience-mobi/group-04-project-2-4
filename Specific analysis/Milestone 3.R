@@ -10,48 +10,36 @@ genes_FC_erlotinb[1:20]
 which(rownames(e_foldchange_normalized) == "CHAC1") 
 
 # vector which only include celllines which were used in e_foldchange_normalized
-NegLogGI50_59_celllines <- NegLogGI50 [6, -c(8,29)]
-#should we change the name from NegLogGI50_59_celllines_neg to LogGI50?
-NegLogGI50_59_celllines_neg <- NegLogGI50_59_celllines*(-1)
+NegLogGI50_59_celllines <- NegLogGI50 ["erlotinib", -c(8,29)]
+#@Anna: should we change the name from NegLogGI50_59_celllines_neg to simply LogGI50?
+NegLogGI50_59_celllines_neg <- NegLogGI50_59_celllines * (-1)
 
-#plot(NegLogGI50_59_celllines_neg, e_treated [3308,], col = color_vector_cancertype, pch = 19, xlab = "logGI50", ylab = "EGR1 Expression (log2, relative to controle",        main = "Erlotinib 24h")
-#legend(x = 0.11, y = 0.06, legend = names(color_palette_cancertype), col = color_palette_cancertype, pch = 19,      xpd = "TRUE")
-#foldchange muss genommen werden, da sonst keine pos uns negativen werte herauskommen. 
+#Coloring according to cancertype
+e_color_cancertype <- color_vector_cancertype[grep("erlotinib", names(color_vector_cancertype), value = TRUE)]
 
+#Scatter plot
 par(oma = c(1,1,1,10), xpd = "TRUE") #size of outer margins: bottom, top, left, right
 plot(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",], 
-     col = color_vector_cancertype, 
+     col = e_color_cancertype, 
      pch = 19, 
      xlab = "logGI50", 
      ylab = "EGR1 Expression (log2, relative to control)",        
      main = "Erlotinib 24h")
 
-NegLogGI50_59_cellline_names <- colnames(NegLogGI50 [,-c (8,29)])
-NegLogGI50_59_celllines_text <- apply(NegLogGI50_59_cellline_names,1, function (NegLogGI50_59_celllines_neg < -5.3 & e_foldchange_normalized < 0,text(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",], labels=NegLogGI50_59_cellline_names, pos =4,   ) 
-  {if(NegLogGI50_59_celllines_neg < -5.3 & e_foldchange_normalized < 0 = TRUE)
-    {text(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",], labels=NegLogGI50_59_cellline_names, pos =4)} 
- else{} })
-  
-  NegLogGI50_59_cellline_names <- colnames(NegLogGI50 [,-c (8,29)])
- sapply(NegLogGI50_59_cellline_names, function(x) {ifelse (NegLogGI50_59_celllines_neg < -5.3 & e_foldchange_normalized < 0)
-   text(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",], labels=NegLogGI50_59_cellline_names, pos =4)}) 
-  min
-
- test <- function (x) {
-   ifelse (NegLogGI50_59_celllines_neg < -5.3 & e_foldchange_normalized < 0) 
-   text(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",], labels=NegLogGI50_59_cellline_names, pos =4)}
- 
- lapply (NegLogGI50_59_celllines_neg, FUN = test)
- 
- 
-# text(e_foldchange_normalized ["EGR1",], label=ifelse (e_foldchange_normalized ["EGR1",4] < -4,
-#as.character (NegLogGI50_59_cellline_names),''), pos =4)
- #läuft durch macht abe nichts 
- 
 legend(x = -3.8, y = 2, 
        legend = names(color_palette_cancertype), 
        col = color_palette_cancertype, 
        pch = 19)
+
+#label only points in the left bottom quarter
+labeled_celllines <- names(NegLogGI50_59_celllines_neg)[NegLogGI50_59_celllines_neg < - 5.5
+                                                        & e_foldchange_normalized["EGR1", ] < 0]
+
+text(NegLogGI50_59_celllines_neg[labeled_celllines], e_foldchange_normalized ["EGR1", labeled_celllines], 
+     labels = labeled_celllines,
+     cex = 0.7,
+     pos = 3) #position of text at the top of the point
+
 
 #Pearson correlation
 res <- cor.test(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",], 
@@ -61,5 +49,4 @@ res
 lm()
 
 'to do:
-nur spezifische Cellinien benennen
 linear regression'

@@ -5,7 +5,7 @@ e_foldchange <- e_treated - e_untreated
 
 #colnames of e_foldchange with cellline instead of complete sample name
 cellline <- sapply(colnames(e_foldchange), function(x){
-  colnames(annotation_sorted_by_cell_lines)[which(x == annotation_sorted_by_cell_lines, arr.ind = TRUE)[2]]
+  annotation[x, "Cellline"]
 })
 colnames(e_foldchange) <- cellline
 
@@ -161,7 +161,7 @@ e_treated_untreated_biomarkers <- e_treated_untreated_biomarkers[,order(colnames
 
 # create a color vector, where untreated samples are green and treated ones are red
 color_boxplot_e_treated_untreated <- sapply(colnames(e_treated_untreated_biomarkers), function(x) {
-  ifelse(x %in% grep ("Untreated",colnames_e_treated_untreated_biomarkers, value = TRUE),
+  ifelse(x %in% grep ("Untreated",colnames(e_treated_untreated_biomarkers), value = TRUE),
          "green", "red")})
 
 # boxplot, where treated and untreated are right next to each other 

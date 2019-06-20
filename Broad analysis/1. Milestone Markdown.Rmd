@@ -1,9 +1,9 @@
 ---
 title: "Project 2 Group 4"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 ## von Anna, Ann-Sophie und Jana
