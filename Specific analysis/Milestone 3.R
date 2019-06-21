@@ -43,12 +43,15 @@ text(NegLogGI50_59_celllines_neg[labeled_celllines], e_foldchange_normalized ["E
 
 #Pearson correlation
 res <- cor.test(NegLogGI50_59_celllines_neg, e_foldchange_normalized ["EGR1",], 
-     method = "pearson")
+                method = "pearson")
 res
 
-lm()
+#linear regression  between EGR1 expression and the GI50 value after erlotinib treatment
+linearMod_EGR1 <- lm(NegLogGI50_59_celllines_neg ~ e_foldchange_normalized ["EGR1",])  # build linear regression model on full data
+print(linearMod_EGR1)
 
-
+summary(linearMod_EGR1)
+# Only 25 % can be discribed by EGR1- expression !!!!
 
 
 # Expressionsdaten von EGFR Expressione relativ to controle 
@@ -85,13 +88,27 @@ plot(NegLogGI50_59_celllines_neg, e_untreated ["EGFR",],
      xlab = "logGI50", 
      ylab = "EGFR Expression (untreated)",        
      main = "Expression of the epidermal growth factor receptor (Her 1)")
-   
+
 legend(x = -3.8, y = 11, 
     legend = names(color_palette_cancertype), 
     col = color_palette_cancertype, 
     pch = 19)
 
 text(NegLogGI50_59_celllines_neg, e_untreated ["EGFR",], labels  = NegLogGI50_59_cellline_names,cex= 0.7, pos=3)   
+
+#Funktioniert noch nicht
+abline(lm(NegLogGI50_59_celllines_neg ~ e_untreated["EGFR",]))
+
+# lineare regression Her 1 expression against the GI50 values
+linearMod_Her1 <- lm(NegLogGI50_59_celllines_neg ~ e_untreated ["EGFR",])  # build linear regression model on full data
+print(linearMod_Her1)
+summary(linearMod_Her1)
+
+'!!!! mode does nott fit that well, only 17% can be disrecped by Her1 expression.
+Maybe we have to consider all types of Her receptors 1-4!!! 
+cause the composition of Her1 and Her3/4 play a part when it comes to bad/good prognoses an therfore could 
+play a role in the GI50 values an the success of erlotinib treatment.'
+
 
 
 #ERROR      
@@ -100,11 +117,5 @@ labeled_cellline_clusters <- names(NegLogGI50_59_celllines_neg)[ cellline_cluste
 text(NegLogGI50_59_celllines_neg[labeled_cellline_clusters], e_untreated[ "EGFR",],
     labels = labeled_cellline_clusters,
     cex = 0.7,
-    pos = 3)  
+    pos = 3)
    
-
-
-
-   
-'to do:
-linear regression'
