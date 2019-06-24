@@ -1,9 +1,9 @@
 ---
 title: "Data analysis: Project 2 Group 4"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
-  pdf_document: default
 ---
 ## Molecular Biotechnology, 4th term, Summer 2019
 ### Anna, Ann-Sophie und Jana
@@ -166,7 +166,7 @@ In the boxplot sudden differences occuring with a regular pattern can be observe
 
 **Color plot according to drugs**
 ```{r warning = FALSE}
-par(mar = c(4, 6, 4, 10), xpd = "TRUE")
+par(mar = c(4, 4, 4, 8), xpd = "TRUE")
 boxplot(NCI_TPW_gep_untreated, 
         xaxt = "n", 
         ylab = "Gene expression profile", 
@@ -177,7 +177,7 @@ title(xlab = "Samples", line = 1.0)
 legend("topright", 
        legend = names(color_palette_drug), 
        col = color_palette_drug,
-       inset = c(-0.365, 0),
+       inset = c(-0.3, 0),
        pch = 19)
 ```
 
@@ -192,7 +192,7 @@ FC_normalized <- apply(fold_changes, 2, function(x){
 })
 
 #boxplot of normalized untreated values
-par(mar = c(4, 6, 4, 10), xpd = "TRUE")
+par(mar = c(4, 4, 4, 7), xpd = "TRUE")
 boxplot(untreated_normalized, 
         xaxt = "n", 
         ylab = "Gene expression profile", 
@@ -204,17 +204,17 @@ legend("topright",
        legend = names(color_palette_drug), 
        col = color_palette_drug, 
        pch = 19,
-       inset = c(-0.365, 0))
+       inset = c(-0.4, 0))
 ```
 
 ### PCA
 A principal component analysis is used for dimensionality reduction. With these technique it is possible to depict most of the variance observed in the gene expression changes due to drug treatment (foldchange) over all samples. The points were colored firstly according to drug and secondly according to cancertype to see whether there are clusters corresponding to drug treatment or cancertype. 
 
 **Coloring according to drug**
-```{r warning = FALSE}
+```{r warning = FALSE, fig.height=5}
 pca <- prcomp(FC_normalized)
 
-par(oma = c(1, 1, 1, 8), mfrow = c(1, 2)) #mfrow to create multiple plots
+par(oma = c(1, 1, 1, 8), mfrow = c(2, 1)) #mfrow to create multiple plots
 #PC1 and PC2
 plot(pca$rotation[,1], 
      pca$rotation[,2], 
