@@ -1,12 +1,12 @@
 ---
 title: "Data analysis: Project 2 Group 4"
 output:
-  pdf_document: default
   html_document:
     df_print: paged
+  pdf_document: default
 ---
-## Molecular Biotechnology, 4th term, Summer 2019
-### Anna, Ann-Sophie und Jana
+# Molecular Biotechnology, 4th term, Summer 2019
+## Anna, Ann-Sophie und Jana
 
 ```{r, include=FALSE}
 #Load required packages
@@ -42,7 +42,7 @@ drug_annotation <- read.delim("https://ndownloader.figshare.com/files/14768984?p
 
 # 1. Broad analysis
 
-### Data preparation and annotation
+## Data preparation and annotation
 
 **Calculate fold change** due to drug treatment  
 The begin of the project includes some preparation of the data and annotation. Since the gene expression values are already logarithmic, the fold change caused by the drug can be calculated by substracting the untreated values (as a control of normal gene expression for each gene in each cellline) from the treated ones. 
@@ -63,6 +63,18 @@ cellline_annotation[33, 1] <- "SK-MEL-2_"
 #delete level SK-MEL-2 (otherwise we would have 62, instead of 61 levels)
 cellline_annotation$Cell_Line_Name <- factor(as.character(
   cellline_annotation$Cell_Line_Name))
+```
+
+**Renaming of cancertype Non-Small Cell Lung
+To make the legend of the following plots smaller and clearer, we abbreviate Non-Small Cell Lung with NSCL.
+```{r}
+#NSCL is added as new factor 
+levels(cellline_annotation$Cancer_type) <- c(levels(cellline_annotation$Cancer_type), 
+                                                "NSCL")
+cellline_annotation[grep ("Non-Small Cell Lung", cellline_annotation$Cancer_type), "Cancer_type"] <- "NSCL"
+#delete level Non-Small Cell Lung (otherwise we would have 16, instead of 15 levels)
+cellline_annotation$Cancer_type <- factor(as.character(
+  cellline_annotation$Cancer_type))
 ```
 
 **Annotation** of all sample names  
@@ -101,6 +113,7 @@ cancertype <- sapply(annotation[, 2], function(x){
 })
 cancertype <- as.vector(unlist(cancertype))
 
+
 annotation <- cbind(annotation, "Cancertype" = cancertype)
 rm(drugs, sample_drug, cellline, sample_cellline, cancertype)
 ```
@@ -129,6 +142,7 @@ color_vector_drug <- sapply(rownames(annotation), function(x){
 color_palette_cancertype <- c("aquamarine", "brown", "forestgreen", "chartreuse", 
                               "darkgoldenrod1", "cadetblue","purple", 
                               "firebrick1", "deepskyblue")
+
 names(color_palette_cancertype) <- levels(cellline_annotation$Cancer_type)
 
 #create vector containing a color name for each sample according to cancertype
@@ -137,27 +151,27 @@ color_vector_cancertype <- sapply(rownames(annotation), function(x){
 })
 ```
 
-### Density plot 
+## Density plot 
 To show the distribution of all gene expression values, a density plot was drawn. The black line contains all values measured for control samples (untreated). In red the distribution of the gene expressiion of all samples treated with 15 drugs is shown.
 ```{r }
-plot(density(NCI_TPW_gep_untreated), "Density plot of gene expression")
+plot(density(NCI_TPW_gep_untreated), "Density plot of gene expression", cex.main = 1.12)
 lines(density(NCI_TPW_gep_treated), col = "red")
 legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), pch = 15)
 ```
 
 As expected, there can be hardly seen any difference between both curves. One reason for that is that the gene expression of most of the 13299 genes did not change due to the drug. 
 
-### Boxplot
+## Boxplot
 In a next step the gene expression profile of each untreated sample was visualized in a boxplot to look, whether the complete expression profiles look the same over all samples or whether normalization is needed. 
 ```{r warning = FALSE }
-#par(oma = ) makes spaces outside the plot larger (oma = outer margins)
 #xaxt = "n": removes labels on x-axis
 #title() used to move xlab nearer to the axis
-par(oma = c(1, 1, 1, 8), xpd = "TRUE")
+par(mar = c(4, 4, 4, 7.5), xpd = "TRUE")
 boxplot(NCI_TPW_gep_untreated, 
         xaxt = "n", 
         ylab = "Gene expression profile", 
         vertical =  T, 
+        cex.main = 1.12,
         main = "Gene expression profile of untreated NCI60 celllines")
 title(xlab = "Samples", line = 1.0)
 ```
@@ -166,18 +180,19 @@ In the boxplot sudden differences occuring with a regular pattern can be observe
 
 **Color plot according to drugs**
 ```{r warning = FALSE}
-par(mar = c(4, 4, 4, 8), xpd = "TRUE")
+par(mar = c(4, 4, 4, 7.5), xpd = "TRUE")
 boxplot(NCI_TPW_gep_untreated, 
         xaxt = "n", 
         ylab = "Gene expression profile", 
         vertical =  T, 
         main = "Gene expression profile of untreated NCI60 celllines", 
+        cex.main = 1.12,
         boxcol = color_vector_drug)
 title(xlab = "Samples", line = 1.0)
 legend("topright", 
        legend = names(color_palette_drug), 
        col = color_palette_drug,
-       inset = c(-0.3, 0),
+       inset = c(-0.35, 0),
        pch = 19)
 ```
 
@@ -192,29 +207,31 @@ FC_normalized <- apply(fold_changes, 2, function(x){
 })
 
 #boxplot of normalized untreated values
-par(mar = c(4, 4, 4, 7), xpd = "TRUE")
+par(mar = c(4, 4, 4, 7.5), xpd = "TRUE")
 boxplot(untreated_normalized, 
         xaxt = "n", 
         ylab = "Gene expression profile", 
         vertical =  T, 
-        main = "Normalized gene expression profile of untreated NCI60 celllines", 
+        main = "Normalized gene expression profile of untreated NCI60 celllines",
+        cex.main = 1.12, 
         boxcol = color_vector_drug)
 title(xlab = "Samples", line = 1.0)
 legend("topright",
        legend = names(color_palette_drug), 
        col = color_palette_drug, 
        pch = 19,
-       inset = c(-0.4, 0))
+       inset = c(-0.35, 0))
 ```
 
-### PCA
+## PCA
 A principal component analysis is used for dimensionality reduction. With these technique it is possible to depict most of the variance observed in the gene expression changes due to drug treatment (foldchange) over all samples. The points were colored firstly according to drug and secondly according to cancertype to see whether there are clusters corresponding to drug treatment or cancertype. 
 
 **Coloring according to drug**
-```{r warning = FALSE, fig.height=5}
+```{r warning = FALSE, fig.height=8}
 pca <- prcomp(FC_normalized)
 
-par(oma = c(1, 1, 1, 8), mfrow = c(2, 1)) #mfrow to create multiple plots
+par(mar = c(4, 4, 4, 7.5), mfrow = c(2, 1))
+
 #PC1 and PC2
 plot(pca$rotation[,1], 
      pca$rotation[,2], 
@@ -222,6 +239,21 @@ plot(pca$rotation[,1],
      pch = 19, 
      xlab = "PC1", 
      ylab = "PC2")
+#create legend on the right side
+legend("topright", 
+       legend = names(color_palette_drug), 
+       col = color_palette_drug, 
+       pch = 19, 
+       xpd = "TRUE",
+       inset = c(-0.35, 0))
+#Title: mtext = margin text, side = 3 (upside)
+mtext("PCA of FC colored according to drug", 
+      side = 3, 
+      line = -2.5,
+      cex = 1.12,
+      font = 2, #bold
+      outer = TRUE)
+
 #PC2 and PC3
 plot(pca$rotation[,1], 
      pca$rotation[,3], 
@@ -229,27 +261,14 @@ plot(pca$rotation[,1],
      pch = 19, 
      xlab = "PC1", 
      ylab = "PC3")
-#create legend on the right side
-legend("topright", 
-       legend = names(color_palette_drug), 
-       col = color_palette_drug, 
-       pch = 19, 
-       xpd = "TRUE",
-       cex = 0.8,
-       inset = c(-0.9, 0))
-#Title: mtext = margin text, side = 3 (upside)
-mtext("PCA of FC colored according to drug", 
-      side = 3, 
-      line = -2,
-      font = 2, #bold
-      outer = TRUE)
+
 ```
 
 In the PCA plot it can be seen that the celllines treated with the same drug accumulate in certain areas. 
 
 **Coloring according to cancertype**
-```{r warning = FALSE}
-par(oma = c(1, 1, 1, 8), mfrow = c(1, 2))
+```{r warning = FALSE, fig.height=8}
+par(mar = c(4, 4, 4, 7), mfrow = c(2, 1))
 #PC1 and PC2
 plot(pca$rotation[,1], 
      pca$rotation[,2], 
@@ -257,6 +276,12 @@ plot(pca$rotation[,1],
      pch = 19, 
      xlab = "PC1", 
      ylab = "PC2")
+legend("topright",
+       legend = names(color_palette_cancertype), 
+       col = color_palette_cancertype, 
+       pch = 19, 
+       xpd = "TRUE",
+       inset = c(-0.28, 0))
 #PC2 and PC3
 plot(pca$rotation[,2], 
      pca$rotation[,3], 
@@ -264,16 +289,11 @@ plot(pca$rotation[,2],
      pch = 19, 
      xlab = "PC2", 
      ylab = "PC3")
-legend("topright",
-       legend = names(color_palette_cancertype), 
-       col = color_palette_cancertype, 
-       pch = 19, 
-       xpd = "TRUE",
-       inset = c(-1.1, 0),
-       cex = 0.8)
+
 mtext("PCA of FC colored according to cancertype", 
       side = 3, 
-      line = -2,
+      line = -2.5,
+      cex = 1.12,
       font = 2, #bold
       outer = TRUE)
 
@@ -282,7 +302,7 @@ rm(pca)
 
 The colors showing which cancertype a cellline belongs to seem rather random distributed in the PCA plot. No clustering between the celllines beeing part of the same cancertype can be observed. 
 
-### Most regulated genes
+## Most regulated genes
 **Barplot** to find genes, which were mostly regulated by all cancer treatments 
 ```{r}
 #calculating the mean FC over positive FC values
@@ -290,7 +310,8 @@ mean_FC_abs <- apply(abs(fold_changes), 1, mean)
 mean_FC_abs <- sort(mean_FC_abs, decreasing = TRUE)
 par(oma = c(10, 1, 1, 1))
 barplot(mean_FC_abs[1:20], 
-        main = "Genes with highest mean in absolute FC",  
+        main = "Genes with highest mean in absolute FC",
+        cex.main = 1.12,
         ylab = "mean FC", 
         las = 2)
 ```
@@ -303,7 +324,8 @@ FC_samples_with_highest_mean_FC <- data.matrix(as.data.frame(sapply(names(mean_F
 })))
 boxplot(FC_samples_with_highest_mean_FC, 
       ylab = "foldchange", 
-      main = "boxplot of foldchange of the genes with highest mean FC", 
+      main = "Boxplot of foldchange of the genes with highest mean FC", 
+      cex.main = 1.12,
       las=2) 
 ```
 
@@ -315,7 +337,7 @@ boxplot(FC_samples_with_highest_mean_FC,
 
 ## 2. Milestone: find most affected cell lines and genes
 
-### Data preparation 
+## Data preparation 
 **Erlotinib treated** cell lines are selected and the matrix of the foldchange is normalized
 
 ```{r }
@@ -324,16 +346,16 @@ e_treated <- NCI_TPW_gep_treated[,grep ("erlotinib", colnames(NCI_TPW_gep_treate
 e_untreated <- NCI_TPW_gep_untreated[,grep ("erlotinib", colnames(NCI_TPW_gep_treated))]
 
 #z-Transformation of e_treated/e_untreated to get mean=0 and sd=1
-e_treated_norm <- apply(e_treated, 2, function(x){
+'e_treated_norm <- apply(e_treated, 2, function(x){
   (x - mean(x)) / sd(x)
 })
 e_untreated_norm <- apply(e_untreated, 2, function(x){
   (x - mean(x)) / sd(x)
-})
+})'
 
 
 # calculate foldchange by subtracting e_untreated_norm from e_treated_norm
-e_foldchange <- e_treated_norm - e_untreated_norm
+e_foldchange <- e_treated - e_untreated
 
 #colnames of e_foldchange with cellline instead of complete sample name
 cellline <- sapply(colnames(e_foldchange), function(x){
@@ -343,8 +365,8 @@ colnames(e_foldchange) <- cellline
 
 ```
 
-### **Most regulated cell lines**
-### Table of 15 cell lines   
+## **Most regulated cell lines**
+## Table of 15 cell lines   
 Cell lines, which showed the highest variance over all genes were selected
 
 ```{r comment=NA}
@@ -368,11 +390,11 @@ rownames(table_cell_lines_var_top15) <- c(1:nrow(celllines_top15))
 print(table_cell_lines_var_top15)
 ```
 
-### PCA
+## PCA
 PCA is performed to find cell lines, which differ most from the other cell lines
 ```{r message=FALSE, warning=FALSE}
 #PCA with transformed matrix (each point represents a sample):
-par(mar= c(4,4,4,10))
+par(mar= c(4, 4, 4, 7))
 pca <- prcomp(e_foldchange)
 plot(pca$rotation[,1], 
      pca$rotation[,2], 
@@ -380,13 +402,14 @@ plot(pca$rotation[,1],
      pch=19, 
      xlab = "PC1", 
      ylab="PC2", 
-     main = "PCA of cell lines")
+     main = "PCA of cell lines",
+     cex.main = 1.12)
 legend("topright", 
        legend = names(color_palette_cancertype), 
        col = color_palette_cancertype, 
        pch = 19, 
        xpd = TRUE, 
-       inset = c(-0.41, 0))
+       inset = c(-0.28, 0))
 #label points
 text(pca$rotation[ ,1], 
      pca$rotation[ ,2], 
@@ -395,8 +418,8 @@ text(pca$rotation[ ,1],
      cex = 0.6)
 ```
 
-### **Most regulated genes**
-### Volcano plot
+## **Most regulated genes**
+## Volcano plot
 Create volcano plot to find the genes with the highest fold change and highest significance
 
 ```{r warning=FALSE, message=FALSE}
@@ -404,8 +427,8 @@ Create volcano plot to find the genes with the highest fold change and highest s
 e_foldchange_mean_over_cell_lines <- rowMeans(e_foldchange) #equal to e_treated_mean_over_cell_lines - e_untreated_mean_over_cell_line
 
 #determine the p-value for a paired two-sample t-test 
-p_values <- sapply(rownames(e_treated_norm), function(x) {
-  t.test(e_treated_norm[x,], e_untreated_norm[x,],paired= T)$p.value}) # perform t-test and save p-values of each gene in p_vales-vector
+p_values <- sapply(rownames(e_treated), function(x) {
+  t.test(e_treated[x,], e_untreated[x,],paired= T)$p.value}) # perform t-test and save p-values of each gene in p_vales-vector
 FDR_values <- p.adjust(p_values, method = "BH", n = length(p_values))#calculate FDR with benjamini-hochberg (BH)
 
 
@@ -420,15 +443,20 @@ EnhancedVolcano(statistics_values,
                 x = "e_foldchange_mean_over_cell_lines", #colname of FC values in this table (statistics_values)
                 y = "FDR_values", #colname of FDR (statistics_values)
                 title = "Volcano plot of all genes",
+                titleLabSize = 13,
                 pCutoff = 10e-15, #threshold for coloring significant ones
                 FCcutoff = 1, #threshold for coloring high FC
-                transcriptPointSize = 3,
-                transcriptLabSize = 3.0)
+                transcriptPointSize = 2,
+                transcriptLabSize = 3,
+                legendPosition = "right",
+                legendLabSize= 10,
+                axisLabSize = 10,
+                subtitle = "", caption = "") # remove subtitle and caption generated by Bioconductor
 
 ```
 
 
-### Density plot 
+## Density plot 
 Draw a density plot only with biomarkers identified by volcano plot
 ```{r}
 #save the "red" genes seen in the volcano plot in a vector for further analysis
@@ -436,13 +464,14 @@ biomarkers <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 1
                                                    & statistics_values[, 2] < 10e-15)]
 
 #Density plot with these genes (untreated vs. treated)
-plot(density(e_treated_norm[biomarkers, ]), "Density plot of gene expression", col = "red")
-lines(density(e_untreated_norm[biomarkers, ]), col = "black")
+plot(density(e_treated[biomarkers, ]), "Density plot of gene expression", cex = 1.12, col = "red")
+
+lines(density(e_untreated[biomarkers, ]), col = "black")
 legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), pch = 15)
 
 ```
 
-### MA-Plot 
+## MA-Plot 
 Draw an MA plot to compare the fold change to the mean expression of all genes
 ```{r}
 #install package and load ggplot2 and ggrepel
@@ -451,7 +480,7 @@ library(ggrepel)
 
 #create matrices with the variables M and A of a MA-plot
 M <- e_foldchange # M= log2(treated) - log2 (untreated)
-A <- 1/2*(e_treated_norm+ e_untreated_norm) # average log2-expression value A = 1/2 (log2(treated)+log2(untreated))
+A <- 1/2*(e_treated+ e_untreated) # average log2-expression value A = 1/2 (log2(treated)+log2(untreated))
 MA <- cbind("M"= rowMeans(M), "A" = rowMeans(A), FDR_values)
 rm(M, A)
 MA <- as.data.frame(MA)
@@ -467,28 +496,39 @@ ggplot(data=MA)+
   xlab("mean expression")+
   ylab("log fold change")+
   ggtitle("MA plot of all genes")+
-  geom_text(data=MA_labeled, aes(A, M, label=rownames(MA_labeled)))
+  geom_text(data=MA_labeled, aes(A, M, label=rownames(MA_labeled)))+
+  theme(plot.title = element_text(size=13, face="bold", hjust=0.5)) # change the size and face (bold) of the title and centre it (hjust=0.5)
 
 
 ```
 
-### Venn Diagram
+## Venn Diagram
 Venn Diagramm is drawn to compare the most regulated genes by volcano plot and MA plot
 ```{r warning=FALSE, message=FALSE}
 #Venn Diagram with biomarkers of volcano plot and MA plot
 library(VennDiagram)
+par(oma = c(2, 2, 2, 2))
 biomarkers_MA_vector <- rownames(MA_labeled)
 venn.plot <- venn.diagram(
   x = list(
     "Volcano Plot" = biomarkers,
     "MA Plot" = biomarkers_MA_vector
     ),
-  filename = NULL, fill = c("blue", "red"), main = "Venn Diagramm of most regulated genes"
+  filename = NULL, 
+  fill = c("blue", "red"), 
+  main = "Venn Diagramm of most regulated genes", 
+  main.fontface = 2,
+  main.cex = 1.12,
+  main.fontfamily = "sans", # font type of title is Arial 
+  cat.fontfamily = "sans",
+  cat.cex = 0.9,
+  cat.dist = 0.1, # distance between category and edge of circle
+  fontfamily = "sans"
   );
 grid.draw(venn.plot);
 ```
 
-### Boxplot 
+## Boxplot 
 Draw a boxplot of the **foldchange** of biomarkers
 ```{r}
 # create a matrix foldchange_biomarkers, with the foldchange only of the biomarkers
@@ -496,17 +536,17 @@ foldchange_biomarkers <- sapply(biomarkers, function(x){
   e_foldchange[x, ]
 })
 boxplot(foldchange_biomarkers, ylab= "foldchange", 
-        main= "boxplot of foldchange of the biomarkers", las=2)
+        main= "Boxplot of foldchange of the biomarkers", cex = 1.12, las=2)
 ```
 
 Draw a boxplot of the **untreated vs. treated gene expression** of biomarkers 
 ```{r}
 # create a matrix e_treated_biomarkers/ e_untreated_biomarkers, with the gene expression only of the biomarkers
 e_treated_biomarkers <- sapply(biomarkers, function(x){
-  e_treated_norm[x, ]
+  e_treated[x, ]
 })
 e_untreated_biomarkers <- sapply(biomarkers, function(x){
-  e_untreated_norm[x, ]
+  e_untreated[x, ]
 }) 
 colnames(e_treated_biomarkers) <- paste(colnames(e_treated_biomarkers),"Treated",
                                           sep = "_") #add treated to colnames
@@ -522,11 +562,11 @@ color_boxplot_e_treated_untreated <- sapply(colnames(e_treated_untreated_biomark
 
 # boxplot, where treated and untreated are right next to each other 
 boxplot(e_treated_untreated_biomarkers, ylab= "gene expression (log2)", 
-        main= "boxplot of gene expression of the biomarkers", las=2, col= color_boxplot_e_treated_untreated)
+        main= "Boxplot of gene expression of the biomarkers", cex = 1.12, las=2, col= color_boxplot_e_treated_untreated)
 ```
 
 ## 3. Milestone - Does the fold change of specific genes correlate with cell growth inhibition?
-### Data prepatation 
+## Data prepatation 
 
 ```{r}
 # vector which only includes celllines which were used in e_foldchange_normalized
@@ -535,14 +575,10 @@ LogGI50_59_celllines <- NegLogGI50_59_celllines * (-1)
 
 
 #colnames of e_untreated with cellline instead of complete sample name
-cellline_untreated <- sapply(colnames(e_untreated), function(x){
-   colnames(annotation_sorted_by_cell_lines)[which(x == annotation_sorted_by_cell_lines, arr.ind = TRUE)[2]]
- })
-colnames(e_untreated) <- cellline_untreated
-
+colnames(e_untreated) <- cellline
 ```
 
-### Scatter plot: Relation between GI50 and EGR1 expression
+## Scatter plot: Relation between GI50 and EGR1 expression
 Draw a scatterplot which include the GI50 values against the EGR1 expression revative to the untreated control. EGR1 is a transcriptional factor and is assocciated with the activiation of tumor suppressor genes like p53/TP53 and TGFB1, and plays an important role in the regulation of growth factor responses.
  
 ```{r figEGR1 , fig.width = 6, fig.hight =6, fig.asp = 1.1}
@@ -550,26 +586,29 @@ Draw a scatterplot which include the GI50 values against the EGR1 expression rev
 e_color_cancertype <- color_vector_cancertype[grep("erlotinib", names(color_vector_cancertype), value = TRUE)]
 
 #Scatter plot
-par(oma = c(1,1,1,10), xpd = "TRUE") #size of outer margins: bottom, top, left, right
-plot(LogGI50_59_celllines, e_foldchange_normalized ["EGR1",], 
+par(mar= c(4, 4, 4, 7), xpd = "TRUE") #size of outer margins: bottom, top, left, right
+plot(LogGI50_59_celllines, e_foldchange ["EGR1",], 
      col = e_color_cancertype, 
      pch = 19, 
      xlab = "logGI50", 
      ylab = "EGR1 Expression (log2, relative to control)",        
-     main = "Erlotinib 24h", col.main = "deepskyblue")
+     main = "Erlotinib 24h", 
+     cex.main = 1.12, 
+     col.main = "deepskyblue")
 
 segments(-7.11,0, -3.88)
-legend(x = -3.8, y = 2, 
+legend("topright", 
        legend = names(color_palette_cancertype), 
        col = color_palette_cancertype, 
+       inset = c(-0.32, 0),
        pch = 19)
 
 
 #label only points in the left bottom quarter
 labeled_celllines <- names(LogGI50_59_celllines)[LogGI50_59_celllines < - 5.5
-                                                        & e_foldchange_normalized["EGR1", ] < 0]
+                                                        & e_foldchange["EGR1", ] < 0]
 
-text(LogGI50_59_celllines[labeled_celllines], e_foldchange_normalized ["EGR1", labeled_celllines], 
+text(LogGI50_59_celllines[labeled_celllines], e_foldchange ["EGR1", labeled_celllines], 
      labels = labeled_celllines,
      cex = 0.7,
      pos = 3)#position of text at the top of the point
@@ -577,29 +616,31 @@ text(LogGI50_59_celllines[labeled_celllines], e_foldchange_normalized ["EGR1", l
 mtext(side=3, line=-1, text="r= 0.6792 (***)", adj=c(0.01))
 ```
 
-###linear regression  between EGR1 expression and the GI50 value after erlotinib treatment
+##linear regression  between EGR1 expression and the GI50 value after erlotinib treatment
 ```{r comment = NA}
-linearMod_EGR1 <- lm(LogGI50_59_celllines ~ e_foldchange_normalized ["EGR1",])  # build linear regression model on full data
+linearMod_EGR1 <- lm(LogGI50_59_celllines ~ e_foldchange ["EGR1",])  # build linear regression model on full data
 
 summary(linearMod_EGR1)
 ```
  Only 25 % can be described by EGR1- expression, which makes a linear regression model kind of unfitted. 
 
    
-### Her 1 gene expression in the untreated celllines against GI50 values     
+## Her 1 gene expression in the untreated celllines against GI50 values     
 
 ```{r warning = FALSE}
-par(mar = c(4,4,4,10), xpd = "TRUE")
+par(mar = c(4, 4, 4, 7), xpd = "TRUE")
 plot(LogGI50_59_celllines, e_untreated ["EGFR",], 
       col = e_color_cancertype, 
       pch = 19, 
      xlab = "logGI50", 
      ylab = "EGFR Expression (untreated)",        
-     main = "Expression of the epidermal growth factor receptor (Her 1)")
-legend(x = -3.8, y = 11, 
+     main = "Expression of the epidermal growth factor receptor (Her 1)",
+     cex.main = 1.12)
+legend("topright", 
     legend = names(color_palette_cancertype), 
     col = color_palette_cancertype, 
     pch = 19,
+    inset = c(-0.28, 0),
     xpd = TRUE)
 
 text(LogGI50_59_celllines, e_untreated ["EGFR",], 
@@ -621,7 +662,7 @@ abline(lm(LogGI50_59_celllines ~ e_untreated["EGFR",]))
 ```
 
 
-### lineare regression Her 1 expression against the GI50 values
+## lineare regression Her 1 expression against the GI50 values
 
 ```{r comment = NA}
 linearMod_Her1 <- lm(LogGI50_59_celllines ~ e_untreated ["EGFR",])  # build linear regression model on full data
@@ -632,11 +673,11 @@ Maybe we have to consider all types of Her receptors 1-4!!!
 cause the composition of Her1 and Her3/4 play a part when it comes to bad/good prognoses an therfore could 
 play a role in the GI50 values an the success of erlotinib treatment.
 
-## 4. Milestone
+# 4. Milestone
 
 The aim of our last milestone was to identify the pathways which are most regulated due to erlotinib. We used two methods to create a heatmap of the pathways. In the first one Supplementary Table S2 from the NCI TPW was used. In this table 5-15 genes are listed for each of the pathways. The second method was to use the R package progeny, which scores 100 genes per pathway to calculate the pathway activity and should explain better the pathway activity since more data is regarded. 
 
-### 1. Pathways according Supplementary Table S2
+## 1. Pathways according Supplementary Table S2
 First the genes listed for each pathway were stored in one vector. These pathway vectors were than combined in one table called pathways. 
 ```{r}
 #assign genes to pathways (as in supplementary material)
@@ -692,14 +733,14 @@ This pathway table was then used to create the heatmap_data table, in which the 
 ```{r}
 #calculate mean FC over genes of one pathway for each sample
 heatmap_data <- sapply(1:length(pathways), function(x){ #for each pathway
-  sapply(1:ncol(e_foldchange_normalized), function(y){ #for each sample
+  sapply(1:ncol(e_foldchange), function(y){ #for each sample
     #calculate mean FC of genes of one pathway
-    mean(e_foldchange_normalized[pathways[[x]], y]) 
+    mean(e_foldchange[pathways[[x]], y]) 
   })
 })
 
 colnames(heatmap_data) <- c(names(pathways))
-rownames(heatmap_data) <- colnames(e_foldchange_normalized)
+rownames(heatmap_data) <- colnames(e_foldchange)
 ```
 
 Proof how many clusters are needed with an elbow plot
@@ -759,6 +800,7 @@ pheatmap(t(heatmap_data),
          cutree_rows = 3, #makes white spaces between clusters
          cutree_cols = 3,
          main = "Affected pathways by erlotinib",
+         mainsize = 1.12,
          show_colnames = FALSE,
          cellwidth = 2,
          cellheight = 15, 
@@ -766,12 +808,12 @@ pheatmap(t(heatmap_data),
          fontsize_row = 10)
 ```
 
-### 2. Heatmap with PROGENy
+## 2. Heatmap with PROGENy
 
 Using PROGENY, which scores the 100 most important genes for each pathway to depict its activity.
 ```{r}
 library(progeny)
-progeny_heatmap <- progeny(e_foldchange_normalized)
+progeny_heatmap <- progeny(e_foldchange)
 ```
 
 Proof how many clusters are needed with an elbow plot
@@ -812,6 +854,7 @@ pheatmap(t(progeny_heatmap),
          cutree_rows = 2,
          cutree_cols = 2,
          main = "Affected pathways by erlotinib (PROGENy)",
+         mainsize = 1.12, 
          show_colnames = FALSE,
          cellwidth = 2.5,
          cellheight = 15, 
