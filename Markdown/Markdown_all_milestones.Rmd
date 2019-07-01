@@ -385,13 +385,17 @@ celllines_top15 <- as.data.frame(names(cell_line_var_greater_75quantile))
 #add column with cancertype for top15 celllines
 annotation_cancertype <- annotation[,"Cancertype"]
 names(annotation_cancertype) <- colnames(e_foldchange)
-cancertypes_top15 <- sapply(names(cell_line_var_greater_75quantile), function(x) {annotation_cancertype[which(x == names(annotation_cancertype))]
+cancertypes_top15 <- sapply(names(cell_line_var_greater_75quantile), function(x){
+  annotation_cancertype[which(x == names(annotation_cancertype))]
 })
-table_cell_lines_var_top15 <- cbind(celllines_top15, cell_line_var_greater_75quantile, cancertypes_top15)
+table_cell_lines_var_top15 <- cbind(1:nrow(celllines_top15), celllines_top15, 
+                                    cell_line_var_greater_75quantile, cancertypes_top15)
 
-colnames(table_cell_lines_var_top15) <- c("Cellline", "Variance", "Cancertype")
+colnames(table_cell_lines_var_top15) <- c("Rank", "Cellline", "Variance", "Cancertype")
 rownames(table_cell_lines_var_top15) <- c(1:nrow(celllines_top15))
-print(table_cell_lines_var_top15)
+
+library(formattable)
+formattable(table_cell_lines_var_top15)
 ```
 
 ### PCA
@@ -424,10 +428,9 @@ text(pca$rotation[ ,1][labeled_celllines_PCA],
 ```
 
 ### **Most regulated genes**
-### Volcano plot
-Create volcano plot to find the genes with the highest fold change and highest significance
-
-```{r warning=FALSE, message=FALSE}
+### MA-Plot 
+Draw an MA plot to compare the fold change to the mean expression of all genes
+```{r message = FALSE}
 #mean of gene expression of each gene over all cell lines
 e_foldchange_mean_over_cell_lines <- rowMeans(e_foldchange) #equal to e_treated_mean_over_cell_lines - e_untreated_mean_over_cell_line
 
@@ -439,6 +442,38 @@ FDR_values <- p.adjust(p_values, method = "BH", n = length(p_values))#calculate 
 
 #table of results 
 statistics_values <- cbind(e_foldchange_mean_over_cell_lines, FDR_values)
+
+#install package and load ggplot2 and ggrepel
+library(ggplot2)
+library(ggrepel)
+
+#create matrices with the variables M and A of a MA-plot
+M <- e_foldchange # M= log2(treated) - log2 (untreated)
+A <- 1/2*(e_treated+ e_untreated) # average log2-expression value A = 1/2 (log2(treated)+log2(untreated))
+MA <- cbind("M"= rowMeans(M), "A" = rowMeans(A), FDR_values)
+rm(M, A)
+MA <- as.data.frame(MA)
+MA$Significant <- ifelse(MA$FDR_values < 0.05, "FDR < 0.05", "Not Sig")
+
+#matrix with important genes of MA plot 
+MA_labeled <- MA[which(MA[ , "M"] > 1) , ]
+
+#MA plot labeled with important genes of MA plot
+ggplot(data = MA)+ 
+  aes(x = A, y = M, color = Significant)+
+  geom_point()+
+  xlab("mean expression")+
+  ylab("log fold change")+
+  ggtitle("MA plot of all genes")+
+  geom_text(data = MA_labeled, aes(A, M, label = rownames(MA_labeled)), hjust = 0, nudge_x = 0.1)+
+  theme(plot.title = element_text(size = 13, face = "bold", hjust = 0.5)) # change the size and face (bold) of the title and center it (hjust=0.5)
+
+```
+
+### Volcano plot
+Create volcano plot to find the genes with the highest fold change and highest significance
+
+```{r warning = FALSE, message = FALSE}
 #coloring with package enhanced volcano
 #install package EnhancedVolcano (needs ggplot2, ggrepel)
 library(ggplot2)
@@ -479,40 +514,11 @@ lines(density(e_untreated[biomarkers, ]), col = "black")
 legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), pch = 15)
 ```
 
-### MA-Plot 
-Draw an MA plot to compare the fold change to the mean expression of all genes
-```{r}
-#install package and load ggplot2 and ggrepel
-library(ggplot2)
-library(ggrepel)
 
-#create matrices with the variables M and A of a MA-plot
-M <- e_foldchange # M= log2(treated) - log2 (untreated)
-A <- 1/2*(e_treated+ e_untreated) # average log2-expression value A = 1/2 (log2(treated)+log2(untreated))
-MA <- cbind("M"= rowMeans(M), "A" = rowMeans(A), FDR_values)
-rm(M, A)
-MA <- as.data.frame(MA)
-MA$Significant <- ifelse(MA$FDR_values<0.05, "FDR < 0.05", "Not Sig")
-
-#matrix with important genes of MA plot 
-MA_labeled <- MA[which(MA[ , "M"] > 1.5 | MA[,"M"] > 0.95 & MA[,"A"] > 10) , ]
-
-#MA plot labeled with important genes of MA plot
-ggplot(data=MA)+ 
-  aes(x=A, y=M, color= Significant)+
-  geom_point()+
-  xlab("mean expression")+
-  ylab("log fold change")+
-  ggtitle("MA plot of all genes")+
-  geom_text(data=MA_labeled, aes(A, M, label=rownames(MA_labeled)))+
-  theme(plot.title = element_text(size=13, face="bold", hjust=0.5)) # change the size and face (bold) of the title and center it (hjust=0.5)
-
-
-```
 
 ### Venn Diagram
 Venn Diagramm is drawn to compare the most regulated genes by volcano plot and MA plot
-```{r warning=FALSE, message=FALSE}
+```{r warning = FALSE, message = FALSE}
 #Venn Diagram with biomarkers of volcano plot and MA plot
 library(VennDiagram)
 par(oma = c(2, 2, 2, 2))
@@ -594,13 +600,18 @@ colnames(e_untreated) <- cellline
 
 ### Scatter plot: Relation between GI50 and EGR1 expression
 Draw a scatterplot which include the GI50 values against the EGR1 expression revative to the untreated control. EGR1 is a transcriptional factor and is assocciated with the activiation of tumor suppressor genes like p53/TP53 and TGFB1, and plays an important role in the regulation of growth factor responses.
- 
-```{r figEGR1 , fig.width = 6, fig.hight =6, fig.asp = 1.1, warning=FALSE}
+
+```{r figEGR1 , fig.width = 6, fig.hight = 6, fig.asp = 1.1, warning = FALSE}
+
+#Import picture shown in the Supplementary after 6h
+url <- "https://raw.githubusercontent.com/datascience-mobi/project-02-group-04/master/Project%20proposal/EGR1%20expression.PNG"
+include_graphics(url)
+
 #Coloring according to cancertype
 e_color_cancertype <- color_vector_cancertype[grep("erlotinib", names(color_vector_cancertype), value = TRUE)]
 
 #Scatter plot
-par(mar= c(4, 4, 4, 7), xpd = "TRUE") #size of outer margins: bottom, top, left, right
+par(mar = c(4, 4, 4, 7), xpd = "TRUE")
 plot(LogGI50_59_celllines, e_foldchange ["EGR1",], 
      col = e_color_cancertype, 
      pch = 19, 
@@ -619,18 +630,22 @@ legend("topright",
 
 
 #label only points in the left bottom quarter
-labeled_celllines <- names(LogGI50_59_celllines)[LogGI50_59_celllines < - 5.5
-                                                        & e_foldchange["EGR1", ] < 0]
+labeled_celllines <- names(LogGI50_59_celllines)[LogGI50_59_celllines < - 6
+                                                        & e_foldchange["EGR1", ] < 0 
+                                                 | LogGI50_59_celllines < -5 
+                                                        & e_foldchange["EGR1", ] < -3]
 
 text(LogGI50_59_celllines[labeled_celllines], e_foldchange ["EGR1", labeled_celllines], 
      labels = labeled_celllines,
      cex = 0.7,
-     pos = 3)#position of text at the top of the point
+     pos = 4) #position of text at the right of the point
 
-mtext(side=3, line=-1, text="r= 0.6792 (***)", adj=c(0.01))
+mtext(side = 3, line = -1, text = "r= 0.6792 (***)", adj = c(0.01))
 ```
 
-###linear regression  between EGR1 expression and the GI50 value after erlotinib treatment
+
+
+### linear regression  between EGR1 expression and the GI50 value after erlotinib treatment
 ```{r comment = NA}
 linearMod_EGR1 <- lm(LogGI50_59_celllines ~ e_foldchange ["EGR1",])  # build linear regression model on full data
 
@@ -660,7 +675,7 @@ legend("topright",
 text(LogGI50_59_celllines, e_untreated ["EGFR",], 
      labels  = names(LogGI50_59_celllines),
      cex = 0.7, 
-     pos = 3)
+     pos = 4)
 
 labeled_celllines_EGFR <- names(LogGI50_59_celllines)[LogGI50_59_celllines < - 5.5
                                                         & e_untreated ["EGFR", ] > 8]
