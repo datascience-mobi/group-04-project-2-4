@@ -16,7 +16,7 @@ library(knitr)
 ```{r setup, include=FALSE} 
 #code and output not included in final file
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(cache = TRUE)
+#knitr::opts_chunk$set(cache = TRUE)
 knitr::opts_chunk$set(fig.width = 9, fig.height = 6, fig.align = "center")
 ```
 
@@ -350,7 +350,9 @@ boxplot(FC_samples_with_highest_mean_FC,
 e_treated <- NCI_TPW_gep_treated[,grep ("erlotinib", colnames(NCI_TPW_gep_treated))]
 e_untreated <- NCI_TPW_gep_untreated[,grep ("erlotinib", colnames(NCI_TPW_gep_treated))]
 
-#z-Transformation of e_treated/e_untreated to get mean=0 and sd=1, equivalent to scale(e_treated, scale=TRUE)
+#z-Transformation of e_treated/e_untreated to get mean=0 and sd=1, equivalent to 
+e_treated <- scale(e_treated, scale=TRUE)
+e_untreated <- scale(e_untreated, scale = TRUE)
 #e_treated <- apply(e_treated, 2, function(x){
   #(x - mean(x)) / sd(x)
 #})
@@ -487,8 +489,8 @@ EnhancedVolcano(statistics_values,
                 y = "FDR_values", #colname of FDR (statistics_values)
                 title = "Volcano plot of all genes",
                 titleLabSize = 13,
-                pCutoff = 10e-15, #threshold for coloring significant ones
-                FCcutoff = 1, #threshold for coloring high FC
+                pCutoff = 10e-10, #threshold for coloring significant ones
+                FCcutoff = 0.5, #threshold for coloring high FC
                 transcriptPointSize = 2,
                 transcriptLabSize = 3,
                 legendPosition = "right",
@@ -503,8 +505,8 @@ EnhancedVolcano(statistics_values,
 Draw a density plot only with biomarkers identified by volcano plot
 ```{r}
 #save the "red" genes seen in the volcano plot in a vector for further analysis
-biomarkers_volcano <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 1 
-                                                   & statistics_values[, 2] < 10e-15)]
+biomarkers_volcano <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 0.5 
+                                                   & statistics_values[, 2] < 10e-10)]
 biomarkers <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 0.5)]
 
 #Density plot with these genes (untreated vs. treated)
@@ -672,6 +674,9 @@ legend("topright",
     inset = c(-0.18, 0),
     xpd = TRUE)
 
+clip(-7.13, -3.88,  4, 13)
+abline(lm (e_untreated["EGFR", ]~ LogGI50_59_celllines))
+
 text(LogGI50_59_celllines, e_untreated ["EGFR",], 
      labels  = names(LogGI50_59_celllines),
      cex = 0.7, 
@@ -697,9 +702,10 @@ cor_all_genes <- sapply(rownames(e_foldchange), function(x){
   cor_test_one_gene$estimate
 })
 cor_all_genes_sorted <- sort(cor_all_genes, decreasing = TRUE)
-cor_top_100_genes <- cor_all_genes_sorted[1:100]
+cor_top_500_genes <- cor_all_genes_sorted[1:500]
+cor_all_genes_sorted[500]
 
-cor_biomarkers <- sapply(biomarkers, function(x){
+cor_biomarkers <- sapply(biomarkers_volcano, function(x){
   cor_test_one_biomarker <- cor.test(LogGI50_59_celllines, e_foldchange[x,], method = "pearson")
   cor_test_one_biomarker$estimate
 })
@@ -708,7 +714,7 @@ par(oma = c(2, 2, 2, 2))
 biomarkers_MA_vector <- rownames(MA_labeled)
 venn.plot <- venn.diagram(
   x = list(
-    "100 genes with highest correlation" = names(cor_top_100_genes),
+    "100 genes with highest correlation" = names(cor_top_500_genes),
     "correlation of biomarkers" = names(cor_biomarkers)
     ),
   filename = NULL, 
