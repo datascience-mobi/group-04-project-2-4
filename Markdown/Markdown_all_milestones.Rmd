@@ -490,7 +490,7 @@ EnhancedVolcano(statistics_values,
                 title = "Volcano plot of all genes",
                 titleLabSize = 13,
                 pCutoff = 10e-10, #threshold for coloring significant ones
-                FCcutoff = 0.5, #threshold for coloring high FC
+                FCcutoff = 0.25, #threshold for coloring high FC
                 transcriptPointSize = 2,
                 transcriptLabSize = 3,
                 legendPosition = "right",
@@ -505,9 +505,9 @@ EnhancedVolcano(statistics_values,
 Draw a density plot only with biomarkers identified by volcano plot
 ```{r}
 #save the "red" genes seen in the volcano plot in a vector for further analysis
-biomarkers_volcano <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 0.5 
+biomarkers_volcano <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 0.25 
                                                    & statistics_values[, 2] < 10e-10)]
-biomarkers <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 0.5)]
+biomarkers <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 0.25)]
 
 #Density plot with these genes (untreated vs. treated)
 plot(density(e_treated[biomarkers, ]), "Density plot of gene expression", cex = 1.2, col = "red")
@@ -658,7 +658,7 @@ summary(linearMod_EGR1)
    
 ### Her 1 gene expression in the untreated celllines against GI50 values     
 
-```{r warning = FALSE}
+```{r pressure, echo=TRUE, fig.keep='all'}
 par(mar = c(4, 4, 4, 7), xpd = "TRUE")
 plot(LogGI50_59_celllines, e_untreated ["EGFR",], 
       col = e_color_cancertype, 
@@ -674,6 +674,7 @@ legend("topright",
     inset = c(-0.18, 0),
     xpd = TRUE)
 
+
 clip(-7.13, -3.88,  4, 13)
 abline(lm (e_untreated["EGFR", ]~ LogGI50_59_celllines))
 
@@ -682,17 +683,16 @@ text(LogGI50_59_celllines, e_untreated ["EGFR",],
      cex = 0.7, 
      pos = 4)
 
+  abline(lm(LogGI50_59_celllines ~ e_untreated["EGFR",]))
+
+
 labeled_celllines_EGFR <- names(LogGI50_59_celllines)[LogGI50_59_celllines < - 5.5
                                                         & e_untreated ["EGFR", ] > 8]
 
-text(LogGI50_59_celllines[labeled_celllines_EGFR], e_untreated ["EGFR", labeled_celllines_EGFR], 
+'text(LogGI50_59_celllines[labeled_celllines_EGFR], e_untreated ["EGFR", labeled_celllines_EGFR], 
      labels = labeled_celllines_EGFR,
      cex = 0.7,
-     pos = 3)
-#Funktioniert noch nicht
-abline(lm(LogGI50_59_celllines ~ e_untreated["EGFR",]))
-
-
+     pos = 3)'
 ```
 
 ### Venn Diagramm 
