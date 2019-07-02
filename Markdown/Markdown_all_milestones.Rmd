@@ -597,7 +597,11 @@ LogGI50_59_celllines <- NegLogGI50_59_celllines * (-1)
 
 
 #colnames of e_untreated with cellline instead of complete sample name
-colnames(e_untreated) <- cellline
+cellline_untreated <- sapply(colnames(e_untreated), function(x){
+   colnames(annotation_sorted_by_cell_lines)[which(x == annotation_sorted_by_cell_lines, arr.ind = TRUE)[2]]
+ })
+colnames(e_untreated) <- cellline_untreated
+
 ```
 
 ### Scatter plot: Relation between GI50 and EGR1 expression
@@ -667,6 +671,10 @@ plot(LogGI50_59_celllines, e_untreated ["EGFR",],
      ylab = "EGFR Expression (untreated)",        
      main = "Expression of the epidermal growth factor receptor (Her 1)",
      cex.main = 1.2)
+
+clip(-7.13, -3.88, 4, 13)
+abline(lm (e_untreated["EGFR", ]~ LogGI50_59_celllines))
+
 legend("topright", 
     legend = names(color_palette_cancertype), 
     col = color_palette_cancertype, 
@@ -675,24 +683,13 @@ legend("topright",
     xpd = TRUE)
 
 
-clip(-7.13, -3.88,  4, 13)
-abline(lm (e_untreated["EGFR", ]~ LogGI50_59_celllines))
-
-text(LogGI50_59_celllines, e_untreated ["EGFR",], 
-     labels  = names(LogGI50_59_celllines),
-     cex = 0.7, 
-     pos = 4)
-
-  abline(lm(LogGI50_59_celllines ~ e_untreated["EGFR",]))
-
-
 labeled_celllines_EGFR <- names(LogGI50_59_celllines)[LogGI50_59_celllines < - 5.5
                                                         & e_untreated ["EGFR", ] > 8]
 
-'text(LogGI50_59_celllines[labeled_celllines_EGFR], e_untreated ["EGFR", labeled_celllines_EGFR], 
+text(LogGI50_59_celllines[labeled_celllines_EGFR], e_untreated ["EGFR", labeled_celllines_EGFR], 
      labels = labeled_celllines_EGFR,
      cex = 0.7,
-     pos = 3)'
+     pos = 3)
 ```
 
 ### Venn Diagramm 
