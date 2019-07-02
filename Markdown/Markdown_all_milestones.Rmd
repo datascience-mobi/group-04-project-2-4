@@ -656,7 +656,7 @@ summary(linearMod_EGR1)
    
 ### Her 1 gene expression in the untreated celllines against GI50 values     
 
-```{r warning = FALSE}
+```{r pressure, echo=TRUE, fig.keep='all'}
 par(mar = c(4, 4, 4, 7), xpd = "TRUE")
 plot(LogGI50_59_celllines, e_untreated ["EGFR",], 
       col = e_color_cancertype, 
@@ -671,11 +671,7 @@ legend("topright",
     pch = 19,
     inset = c(-0.18, 0),
     xpd = TRUE)
-
-text(LogGI50_59_celllines, e_untreated ["EGFR",], 
-     labels  = names(LogGI50_59_celllines),
-     cex = 0.7, 
-     pos = 4)
+  abline(lm(LogGI50_59_celllines ~ e_untreated["EGFR",]))
 
 labeled_celllines_EGFR <- names(LogGI50_59_celllines)[LogGI50_59_celllines < - 5.5
                                                         & e_untreated ["EGFR", ] > 8]
@@ -684,10 +680,6 @@ text(LogGI50_59_celllines[labeled_celllines_EGFR], e_untreated ["EGFR", labeled_
      labels = labeled_celllines_EGFR,
      cex = 0.7,
      pos = 3)
-#Funktioniert noch nicht
-abline(lm(LogGI50_59_celllines ~ e_untreated["EGFR",]))
-
-
 ```
 
 ### Venn Diagramm 
