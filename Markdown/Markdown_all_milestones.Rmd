@@ -375,7 +375,7 @@ colnames(e_foldchange) <- cellline
 ### Table of 15 cell lines   
 Cell lines, which showed the highest variance over all genes were selected
 
-```{r comment=NA}
+```{r comment=NA, warning=FALSE}
 #select 15 cell lines with highest variance (greater than 75% quantile, sorted by decreasing value)
 var_cell_line <- apply(e_foldchange, 2, var)
 cell_line_var_greater_75quantile <- sort(var_cell_line [which (abs(var_cell_line) > quantile(abs(var_cell_line), 0.75))], decreasing = TRUE)
@@ -458,7 +458,7 @@ MA <- as.data.frame(MA)
 MA$Significant <- ifelse(MA$FDR_values < 0.05, "FDR < 0.05", "Not Sig")
 
 #matrix with important genes of MA plot 
-MA_labeled <- MA[which(MA[ , "M"] > 1) , ]
+MA_labeled <- MA[which(MA[ , "M"] > 0.25) , ]
 
 #MA plot labeled with important genes of MA plot
 ggplot(data = MA)+ 
@@ -489,7 +489,7 @@ EnhancedVolcano(statistics_values,
                 y = "FDR_values", #colname of FDR (statistics_values)
                 title = "Volcano plot of all genes",
                 titleLabSize = 13,
-                pCutoff = 10e-10, #threshold for coloring significant ones
+                pCutoff = 10e-9, #threshold for coloring significant ones
                 FCcutoff = 0.25, #threshold for coloring high FC
                 transcriptPointSize = 2,
                 transcriptLabSize = 3,
@@ -506,7 +506,7 @@ Draw a density plot only with biomarkers identified by volcano plot
 ```{r}
 #save the "red" genes seen in the volcano plot in a vector for further analysis
 biomarkers_volcano <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 0.25 
-                                                   & statistics_values[, 2] < 10e-10)]
+                                                   & statistics_values[, 2] < 10e-9)]
 biomarkers <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 0.25)]
 
 #Density plot with these genes (untreated vs. treated)
@@ -544,48 +544,6 @@ venn.plot <- venn.diagram(
 grid.draw(venn.plot);
 ```
 
-### Boxplot 
-Draw a boxplot of the **foldchange** of biomarkers
-```{r}
-# create a matrix foldchange_biomarkers_volcano, with the foldchange only of the biomarkers
-foldchange_biomarkers <- sapply(biomarkers_volcano, function(x){
-  e_foldchange[x, ]
-})
-boxplot(foldchange_biomarkers, ylab= "foldchange", 
-        main= "Boxplot of foldchange of the volcano biomarkers", cex = 1.2, las=2)
-```
-
-Draw a boxplot of the **untreated vs. treated gene expression** of biomarkers 
-```{r}
-# create a matrix e_treated_biomarkers_volcano/ e_untreated_biomarkers_volcano, with the gene expression only of the biomarkers_volcano
-e_treated_biomarkers_volcano <- sapply(biomarkers_volcano, function(x){
-  e_treated[x, ]
-})
-e_untreated_biomarkers_volcano <- sapply(biomarkers_volcano, function(x){
-  e_untreated[x, ]
-}) 
-colnames(e_treated_biomarkers_volcano) <- paste(colnames(e_treated_biomarkers_volcano),"Treated",
-                                          sep = "_") #add treated to colnames
-
-# create a matrix, which contains gene expression of untreated and treated and sort it after colnames
-e_treated_untreated_biomarkers_volcano <- cbind (e_treated_biomarkers_volcano, e_untreated_biomarkers_volcano)
-e_treated_untreated_biomarkers_volcano <- e_treated_untreated_biomarkers_volcano[,order(colnames(e_treated_untreated_biomarkers_volcano))]
-
-# create a color vector, where untreated samples are green and treated ones are red
-color_boxplot_e_treated_untreated <- sapply(colnames(e_treated_untreated_biomarkers_volcano), function(x) {
-  ifelse(x %in% grep ("Treated",colnames(e_treated_untreated_biomarkers_volcano), value = TRUE),
-         "red", "green")})
-
-# boxplot, where treated and untreated are right next to each other
-par(mar = c(8, 2, 2, 2))
-boxplot(e_treated_untreated_biomarkers_volcano, 
-        ylab = "gene expression (log2)", 
-        main= "Boxplot of gene expression of the volcano biomarkers", 
-        ceex = 1.2, 
-        las = 2, 
-        col = color_boxplot_e_treated_untreated)
-
-```
 
 ## 3. Milestone - Does the fold change of specific genes correlate with cell growth inhibition?
 ### Data prepatation 
@@ -726,6 +684,9 @@ venn.plot <- venn.diagram(
   fontfamily = "sans",
   cat.pos = c(0,0));
 grid.draw(venn.plot);
+
+biomarker_final <- sapply (names(cor_biomarkers), function (x) {
+  names(cor_biomarkers) [which x == names(cor_top_500_genes)]})
 ```
 
 
@@ -930,3 +891,46 @@ pheatmap(t(progeny_heatmap),
          fontsize_row = 14)
 ```
 
+## 5. Milestone - final results
+### Boxplot 
+Draw a boxplot of the **foldchange** of biomarkers
+```{r}
+# create a matrix foldchange_biomarkers_volcano, with the foldchange only of the biomarkers
+foldchange_biomarkers <- sapply(biomarkers_volcano, function(x){
+  e_foldchange[x, ]
+})
+boxplot(foldchange_biomarkers, ylab= "foldchange", 
+        main= "Boxplot of foldchange of the volcano biomarkers", cex = 1.2, las=2)
+```
+
+Draw a boxplot of the **untreated vs. treated gene expression** of biomarkers 
+```{r}
+# create a matrix e_treated_biomarkers_volcano/ e_untreated_biomarkers_volcano, with the gene expression only of the biomarkers_volcano
+e_treated_biomarkers_volcano <- sapply(biomarkers_volcano, function(x){
+  e_treated[x, ]
+})
+e_untreated_biomarkers_volcano <- sapply(biomarkers_volcano, function(x){
+  e_untreated[x, ]
+}) 
+colnames(e_treated_biomarkers_volcano) <- paste(colnames(e_treated_biomarkers_volcano),"Treated",
+                                          sep = "_") #add treated to colnames
+
+# create a matrix, which contains gene expression of untreated and treated and sort it after colnames
+e_treated_untreated_biomarkers_volcano <- cbind (e_treated_biomarkers_volcano, e_untreated_biomarkers_volcano)
+e_treated_untreated_biomarkers_volcano <- e_treated_untreated_biomarkers_volcano[,order(colnames(e_treated_untreated_biomarkers_volcano))]
+
+# create a color vector, where untreated samples are green and treated ones are red
+color_boxplot_e_treated_untreated <- sapply(colnames(e_treated_untreated_biomarkers_volcano), function(x) {
+  ifelse(x %in% grep ("Treated",colnames(e_treated_untreated_biomarkers_volcano), value = TRUE),
+         "red", "green")})
+
+# boxplot, where treated and untreated are right next to each other
+par(mar = c(8, 2, 2, 2))
+boxplot(e_treated_untreated_biomarkers_volcano, 
+        ylab = "gene expression (log2)", 
+        main= "Boxplot of gene expression of the volcano biomarkers", 
+        ceex = 1.2, 
+        las = 2, 
+        col = color_boxplot_e_treated_untreated)
+
+```
