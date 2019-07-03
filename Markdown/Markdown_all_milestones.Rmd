@@ -555,10 +555,7 @@ LogGI50_59_celllines <- NegLogGI50_59_celllines * (-1)
 
 
 #colnames of e_untreated with cellline instead of complete sample name
-cellline_untreated <- sapply(colnames(e_untreated), function(x){
-   colnames(annotation_sorted_by_cell_lines)[which(x == annotation_sorted_by_cell_lines, arr.ind = TRUE)[2]]
- })
-colnames(e_untreated) <- cellline_untreated
+colnames(e_untreated) <- cellline
 
 ```
 
@@ -642,7 +639,7 @@ legend("topright",
 
 
 labeled_celllines_EGFR <- names(LogGI50_59_celllines)[LogGI50_59_celllines < - 5.5
-                                                        & e_untreated ["EGFR", ] > 8]
+                                                        & e_untreated ["EGFR", ] > 0]
 
 text(LogGI50_59_celllines[labeled_celllines_EGFR], e_untreated ["EGFR", labeled_celllines_EGFR], 
      labels = labeled_celllines_EGFR,
@@ -686,7 +683,8 @@ venn.plot <- venn.diagram(
 grid.draw(venn.plot);
 
 biomarker_final <- sapply (names(cor_biomarkers), function (x) {
-  names(cor_biomarkers) [which x == names(cor_top_500_genes)]})
+  names(cor_biomarkers) [which (x == names(cor_top_500_genes))]
+  })
 ```
 
 
@@ -896,7 +894,7 @@ pheatmap(t(progeny_heatmap),
 Draw a boxplot of the **foldchange** of biomarkers
 ```{r}
 # create a matrix foldchange_biomarkers_volcano, with the foldchange only of the biomarkers
-foldchange_biomarkers <- sapply(biomarkers_volcano, function(x){
+foldchange_biomarkers <- sapply(biomarkers_final, function(x){
   e_foldchange[x, ]
 })
 boxplot(foldchange_biomarkers, ylab= "foldchange", 
@@ -906,10 +904,10 @@ boxplot(foldchange_biomarkers, ylab= "foldchange",
 Draw a boxplot of the **untreated vs. treated gene expression** of biomarkers 
 ```{r}
 # create a matrix e_treated_biomarkers_volcano/ e_untreated_biomarkers_volcano, with the gene expression only of the biomarkers_volcano
-e_treated_biomarkers_volcano <- sapply(biomarkers_volcano, function(x){
+e_treated_biomarkers_volcano <- sapply(biomarkers_final, function(x){
   e_treated[x, ]
 })
-e_untreated_biomarkers_volcano <- sapply(biomarkers_volcano, function(x){
+e_untreated_biomarkers_volcano <- sapply(biomarkers_final, function(x){
   e_untreated[x, ]
 }) 
 colnames(e_treated_biomarkers_volcano) <- paste(colnames(e_treated_biomarkers_volcano),"Treated",
@@ -934,3 +932,26 @@ boxplot(e_treated_untreated_biomarkers_volcano,
         col = color_boxplot_e_treated_untreated)
 
 ```
+
+Venn Diagramm of celllines from heatmap cluster 2 and top15 variance celllines
+```{r}
+heatmap_genes_cluster2 <- rownames(cellline_clusters)[which(cellline_clusters[, 1] == 2)] #genes from cluster 2
+
+venn.plot <- venn.diagram(
+  x = list(
+    "Cellines Heatmap Cluster 2" = heatmap_genes_cluster2,
+    "top15 variance celllines" = table_cell_lines_var_top15[, 2] #column 2 contains celllines
+    ),
+  filename = NULL, 
+  fill = c("blue", "red"), 
+  main = "Venn Diagramm of most regulated genes", 
+  main.fontface = 2,
+  main.cex = 1.2,
+  main.fontfamily = "sans", # font type of title is Arial 
+  cat.fontfamily = "sans",
+  cat.cex = 0.9,
+  fontfamily = "sans");
+grid.draw(venn.plot);
+
+```
+
