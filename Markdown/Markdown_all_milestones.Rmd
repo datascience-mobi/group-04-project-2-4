@@ -16,7 +16,7 @@ library(knitr)
 ```{r setup, include=FALSE} 
 #code and output not included in final file
 knitr::opts_chunk$set(echo = TRUE)
-#knitr::opts_chunk$set(cache = TRUE)
+knitr::opts_chunk$set(cache = TRUE)
 knitr::opts_chunk$set(fig.width = 9, fig.height = 6, fig.align = "center")
 ```
 
@@ -331,7 +331,8 @@ boxplot(FC_samples_with_highest_mean_FC,
       ylab = "foldchange", 
       main = "Boxplot of foldchange of the genes with highest mean FC", 
       cex.main = 1.2,
-      las = 2) 
+      las = 2,
+      outline = FALSE) 
 ```
 
 
@@ -512,7 +513,7 @@ Create a heatmap with the package pheatmap (pretty heatmap):
 ```{r, fig.height = 6, warning = FALSE}
 library(pheatmap)
 library(RColorBrewer)
-annotation_cancertype <- as.data.frame(annotation_cancertype)
+annotation_cancertype_df <- as.data.frame(annotation_cancertype)
 #Scaling of pathways
 heatmap_data <- scale(heatmap_data, scale=TRUE)
 
@@ -522,7 +523,7 @@ color_quantiles <- quantile(heatmap_data, seq(0, 1, 0.1))
 #generate heatmap with colored bars according to clusters
 pheatmap(t(heatmap_data),
          clustering_method = "ward.D2",
-         annotation_col = annotation_cancertype,
+         annotation_col = annotation_cancertype_df,
          cutree_rows = 3, #makes white spaces between clusters
          cutree_cols = 3,
          main = "Affected pathways by erlotinib",
@@ -565,7 +566,7 @@ Clustering of celllines according to dendrogramm and cancertype
 library(dendextend)
 cellline_clustering <- hclust(dist(progeny_heatmap), method = "ward.D2")
 cellline_groups <- as.data.frame(cutree(tree = as.dendrogram(cellline_clustering), k = 2))
-cellline_clusters <- as.data.frame(cbind(cellline_groups, annotation_cancertype))
+cellline_clusters <- as.data.frame(cbind(cellline_groups, annotation_cancertype_df))
 colnames(cellline_clusters) <- c("Cellline cluster", "Cancertype cluster")
 ```
 
@@ -577,7 +578,7 @@ color_quantiles <- quantile(progeny_heatmap, seq(0, 1, 0.1))
 par(mar = c(8, 2, 2, 2))
 pheatmap(t(progeny_heatmap),
          clustering_method = "ward.D2",
-         annotation_col = annotation_cancertype,
+         annotation_col = annotation_cancertype_df,
          cutree_rows = 2,
          cutree_cols = 2,
          main = "Affected pathways by erlotinib (PROGENy)",
@@ -650,7 +651,7 @@ MA <- as.data.frame(MA)
 MA$Significant <- ifelse(MA$FDR_values < 0.05, "FDR < 0.05", "Not Sig")
 
 #matrix with important genes of MA plot 
-MA_labeled <- MA[which(abs(MA[ , "M"]) > 0.25) , ]
+MA_labeled <- MA[which(abs(MA[ , "M"]) > 0.5) , ]
 
 #MA plot labeled with important genes of MA plot
 ggplot(data = MA)+ 
@@ -762,18 +763,21 @@ colnames(e_untreated) <- cellline
 ### Scatter plot: Relation between GI50 and EGR1 expression
 Draw a scatterplot which include the GI50 values against the EGR1 expression revative to the untreated control. EGR1 is a transcriptional factor and is assocciated with the activiation of tumor suppressor genes like p53/TP53 and TGFB1, and plays an important role in the regulation of growth factor responses.
 
-```{r figEGR1 , fig.width = 6, fig.hight = 6, fig.asp = 1.1, warning = FALSE}
+```{r figEGR1 , fig.show = "hold", fig.align = "default", warning = FALSE, fig.width=4.5}
+library(cowplot)
 
 #Import picture shown in the Supplementary after 6h
 url <- "https://raw.githubusercontent.com/datascience-mobi/project-02-group-04/master/Project%20proposal/EGR1%20expression.PNG"
-include_graphics(url)
+#include_graphics(url)
+pic1 <- ggdraw() + draw_image(url, scale = 2.6) 
+
 
 #Coloring according to cancertype
 e_color_cancertype <- color_vector_cancertype[grep("erlotinib", names(color_vector_cancertype), value = TRUE)]
 
 #Scatter plot
-par(mar = c(4, 4, 4, 7), xpd = "TRUE")
-plot(LogGI50_59_celllines, e_foldchange ["EGR1",], 
+par(mar = c(2, 2, 2, 7), xpd = "TRUE")
+pic2 <- {plot(LogGI50_59_celllines, e_foldchange ["EGR1",], 
      col = e_color_cancertype, 
      pch = 19, 
      xlab = "logGI50", 
@@ -782,7 +786,7 @@ plot(LogGI50_59_celllines, e_foldchange ["EGR1",],
      cex.main = 1.2, 
      col.main = "deepskyblue")
 
-segments(-7.11,0, -3.88)
+segments(-7.11, 0, -3.88)
 legend("topright", 
        legend = names(color_palette_cancertype), 
        col = color_palette_cancertype, 
@@ -801,7 +805,40 @@ text(LogGI50_59_celllines[labeled_celllines], e_foldchange ["EGR1", labeled_cell
      cex = 0.7,
      pos = 4) #position of text at the right of the point
 
+mtext(side = 3, line = -1, text = "r= 0.6792 (***)", adj = c(0.01))}
+
+
+# tranform plot into png 
+png("erlotinib_GI50_24h.png", width = 400, height = 800)
+plot(LogGI50_59_celllines, e_foldchange ["EGR1",], 
+     col = e_color_cancertype, 
+     pch = 19, 
+     xlab = "logGI50", 
+     ylab = "EGR1 Expression (log2, relative to control)",        
+     main = "Erlotinib 24h", 
+     cex.main = 1.2, 
+     col.main = "deepskyblue")
+segments(-7.11, 0, -3.88)
+legend("topright", 
+       legend = names(color_palette_cancertype), 
+       col = color_palette_cancertype, 
+       inset = c(-0.32, 0),
+       pch = 19)
+#label only points in the left bottom quarter
+labeled_celllines <- names(LogGI50_59_celllines)[LogGI50_59_celllines < - 6
+                                                        & e_foldchange["EGR1", ] < 0 
+                                                 | LogGI50_59_celllines < -5 
+                                                        & e_foldchange["EGR1", ] < -3]
+text(LogGI50_59_celllines[labeled_celllines], e_foldchange ["EGR1", labeled_celllines], 
+     labels = labeled_celllines,
+     cex = 0.7,
+     pos = 4) #position of text at the right of the point
 mtext(side = 3, line = -1, text = "r= 0.6792 (***)", adj = c(0.01))
+dev.off()
+
+
+plot_grid(pic1, pic2, align = "h", nrow = 1)
+
 ```
 
 
@@ -889,6 +926,8 @@ venn.plot <- venn.diagram(
   cat.just = list(c(0.2,-1.5), c(1.2,-3)));
 grid.draw(venn.plot);
 
+celllines_final <- intersect(celllines_overlap, LogGI50_top10)
+
 ```
 
 ### Venn Diagramm of genes
@@ -926,11 +965,9 @@ venn.plot <- venn.diagram(
   cat.pos = c(0,0));
 grid.draw(venn.plot);
 
-biomarkers_final <- unlist(sapply(names(cor_biomarkers), function(x){
-  x[which (x == names(cor_top_500_genes))]
-}))
+biomarkers_final <- intersect(names(cor_top_500_genes), names(cor_biomarkers))
 
-biomarkers_final <- gsub(pattern = ".cor", replacement = "", x = names(biomarkers_final))
+biomarkers_final <- gsub(pattern = ".cor", replacement = "", x = biomarkers_final)
 
 ```
 
@@ -977,5 +1014,60 @@ boxplot(e_treated_untreated_biomarkers_volcano,
 
 ```
 
+### Correlation
+```{r warning = FALSE}
+par(mar = c(2, 6, 2, 13), xpd = "TRUE")
+
+correlation_b <- c(e_foldchange[biomarkers_final [1],],e_foldchange[biomarkers_final [2],],e_foldchange[biomarkers_final [3],],e_foldchange[biomarkers_final [4],],e_foldchange[biomarkers_final [5],])
+correlation_g <-rep(LogGI50_59_celllines,5)
+correlation_c <- c(rep("green",59),rep("yellow",59),rep("red",59),rep("blue",59),rep("black",59))
+correlation_bn <- c(rep("ATAD2",59),rep("E2F8",59),rep("ERCC6L",59),rep("MIR15A//DLEU2L//DLEU2",59),rep("MKI67",59))
+correlation_biomarkers <- cbind (correlation_b, correlation_g, correlation_c, correlation_bn )
+
+color_palette_biomarkers <- c("red","green","yellow" , "black", "blue" )
+names(color_palette_biomarkers) <- biomarkers_final
+
+plot(correlation_biomarkers[,"correlation_g"],correlation_biomarkers[,"correlation_b"], 
+     col = correlation_c, 
+     pch = 19,
+     xlab = "logGI50", 
+     ylab = "foldchange of biomarkers",        
+     main = " Correlation between biomarkers and the GI50 values of the different celllines",
+     cex.main = 1.2)
+
+legend("topright", 
+       legend = names( color_palette_biomarkers),
+       col = color_palette_biomarkers,
+       pch = 19,
+       inset = c(-0.5, 0),
+       xpd = TRUE)
+```
+
+### Single gene response plot 
+**Barplot** of foldchange of our five biomarkers in our sensitive cell lines
+```{r message = FALSE}
+df_barplot_results <- as.data.frame(sapply (biomarkers_final, function(x) {
+  e_foldchange[x, celllines_final]
+}))
+
+df_barplot_results <- as.data.frame(cbind(cellline = celllines_final, annotation_cancertype_df[celllines_final, ], df_barplot_results))
+
+colnames(df_barplot_results)[2] <- "Cancertypes"
+
+plot <- lapply(colnames(df_barplot_results)[3:7], function(gene){
+  ggplot_title <- paste("Foldchange of" , gene)
+  ggplot(data=df_barplot_results, aes(x=cellline, y= df_barplot_results[ ,gene], fill=Cancertypes)) +
+    geom_bar(stat="identity")+
+    scale_fill_manual(values=c("aquamarine", "forestgreen", "chartreuse", 
+                               "cadetblue","purple", 
+                               "firebrick1", "deepskyblue"))+
+    ggtitle(paste0 (ggplot_title, "\n"))+
+    theme(axis.title.x = element_blank())+
+    coord_flip()
+})
 
 
+library(ggpubr)
+ggarrange(plot[[1]], plot[[2]], plot[[3]], plot[[4]], plot[[5]],
+          ncol = 2, nrow = 3, common.legend = TRUE)
+```
