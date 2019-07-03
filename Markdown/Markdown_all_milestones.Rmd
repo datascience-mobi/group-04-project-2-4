@@ -16,7 +16,7 @@ library(knitr)
 ```{r setup, include=FALSE} 
 #code and output not included in final file
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(cache = TRUE)
+#knitr::opts_chunk$set(cache = TRUE)
 knitr::opts_chunk$set(fig.width = 9, fig.height = 6, fig.align = "center")
 ```
 
@@ -1045,14 +1045,17 @@ legend("topright",
 
 ### Single gene response plot 
 **Barplot** of foldchange of our five biomarkers in our sensitive cell lines
-```{r message = FALSE}
+```{r message = FALSE, warning = FALSE}
 df_barplot_results <- as.data.frame(sapply (biomarkers_final, function(x) {
   e_foldchange[x, celllines_final]
 }))
 
+
 df_barplot_results <- as.data.frame(cbind(cellline = celllines_final, annotation_cancertype_df[celllines_final, ], df_barplot_results))
 
 colnames(df_barplot_results)[2] <- "Cancertypes"
+
+df_barplot_results <- df_barplot_results [order(df_barplot_results[,"Cancertypes"]),]
 
 plot <- lapply(colnames(df_barplot_results)[3:7], function(gene){
   ggplot_title <- paste("Foldchange of" , gene)
@@ -1063,11 +1066,13 @@ plot <- lapply(colnames(df_barplot_results)[3:7], function(gene){
                                "firebrick1", "deepskyblue"))+
     ggtitle(paste0 (ggplot_title, "\n"))+
     theme(axis.title.x = element_blank())+
+    #font("xy.text", size =10)+
+    scale_x_discrete(limits= rownames(df_barplot_results))+
     coord_flip()
 })
 
 
 library(ggpubr)
-ggarrange(plot[[1]], plot[[2]], plot[[3]], plot[[4]], plot[[5]],
-          ncol = 2, nrow = 3, common.legend = TRUE)
+ggarrange( plot[[1]], plot[[2]], plot[[3]], plot[[4]], plot[[5]], 
+          ncol = 2, nrow = 3, common.legend = TRUE, legend = "top")
 ```
