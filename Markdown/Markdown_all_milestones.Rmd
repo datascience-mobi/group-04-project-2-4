@@ -312,12 +312,21 @@ The colors showing which cancertype a cellline belongs to seem rather random dis
 #calculating the mean FC over positive FC values
 mean_FC_abs <- apply(abs(fold_changes), 1, mean)
 mean_FC_abs <- sort(mean_FC_abs, decreasing = TRUE)
+mean_FC_abs <- as.data.frame(cbind(cellline= names(mean_FC_abs[1:20]), abs_foldchange = mean_FC_abs[1:20]))
+ggplot(data=mean_FC_abs, aes(x=cellline, y=abs_foldchange)) +
+    geom_bar(stat="identity")+
+    ggtitle("Genes with highest mean in absolute FC")+
+    scale_x_discrete(limits= rev(rownames(mean_FC_abs)))
+    coord_flip()
+
 par(oma = c(10, 1, 1, 1))
 barplot(mean_FC_abs[1:20], 
         main = "Genes with highest mean in absolute FC",
         cex.main = 1.2,
         ylab = "mean FC", 
         las = 2)
+
+
 ```
 
 **Boxplot** of genes with highest mean FC
