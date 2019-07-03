@@ -353,21 +353,16 @@ e_untreated <- NCI_TPW_gep_untreated[,grep ("erlotinib", colnames(NCI_TPW_gep_tr
 #z-Transformation of e_treated/e_untreated to get mean=0 and sd=1, equivalent to 
 e_treated <- scale(e_treated, scale=TRUE)
 e_untreated <- scale(e_untreated, scale = TRUE)
-#e_treated <- apply(e_treated, 2, function(x){
-  #(x - mean(x)) / sd(x)
-#})
-#e_untreated <- apply(e_untreated, 2, function(x){
-  #(x - mean(x)) / sd(x)
-#})
+
+#colnames of e_foldchange with cellline instead of complete sample name
+cellline <- sapply(colnames(e_treated), function(x){
+  annotation[x,"Cellline"]
+  }) 
+colnames(e_treated) <- cellline
+colnames(e_untreated) <- cellline
 
 # calculate foldchange by substracting e_untreated from e_treated
 e_foldchange <- e_treated - e_untreated
-
-#colnames of e_foldchange with cellline instead of complete sample name
-cellline <- sapply(colnames(e_foldchange), function(x){
-  annotation[x,"Cellline"]
-  }) 
-colnames(e_foldchange) <- cellline
 
 ```
 
@@ -384,7 +379,7 @@ cell_line_var_greater_75quantile <- round(cell_line_var_greater_75quantile, digi
 celllines_top15 <- as.data.frame(names(cell_line_var_greater_75quantile))
 
 #add column with cancertype for top15 celllines
-annotation_cancertype <- annotation[,"Cancertype"]
+annotation_cancertype <- annotation[which(annotation[, "Drug"] == "erlotinib"), "Cancertype"]
 names(annotation_cancertype) <- colnames(e_foldchange)
 cancertypes_top15 <- sapply(names(cell_line_var_greater_75quantile), function(x){
   annotation_cancertype[which(x == names(annotation_cancertype))]
@@ -420,14 +415,14 @@ legend("topright",
        xpd = TRUE, 
        inset = c(-0.18, 0))
 #label points
-labeled_celllines_PCA <- names(pca$rotation[ , 1])[pca$rotation[ , 1] > 0.14]
-text(pca$rotation[ ,1][labeled_celllines_PCA], 
-     pca$rotation[ ,2][labeled_celllines_PCA], 
-     labeled_celllines_PCA,
+celllines_PCA <- names(pca$rotation[ , 1])[pca$rotation[ , 1] > 0.14]
+text(pca$rotation[ ,1][celllines_PCA], 
+     pca$rotation[ ,2][celllines_PCA], 
+     celllines_PCA,
      pos = 2,
      cex = 0.6)
 ```
-### **Which pathways are affected?**
+### Which pathways are affected?
 
 The aim of our last milestone was to identify the pathways which are most regulated due to erlotinib. We used two methods to create a heatmap of the pathways. In the first one Supplementary Table S2 from the NCI TPW was used. In this table 5-15 genes are listed for each of the pathways. The second method was to use the R package progeny, which scores 100 genes per pathway to calculate the pathway activity and should explain better the pathway activity since more data is regarded. 
 
@@ -512,45 +507,22 @@ fviz_nbclust(t(heatmap_data),
   labs(title = "Elbow plot: optimal number of pathway clusters")
 ```
 
-Colored annotation bars above the heatmap should depict several clusters. Therefore, the dendrogramm was used to first cluster the celllines and afterwards the pathways. 
-1. Clustering according to cellline: 
-```{r warning = FALSE, message = FALSE}
-#Clustering with package dendextend
-library(dendextend)
-#hierachical clustering (hclust) of celllines
-#dist(): euclidean distance
-#agglomeration method: "ward.D2"
-cellline_clustering <- hclust(dist(heatmap_data), method = "ward.D2") 
-#cutree: cuts the tree to generate k clusters
-cellline_groups <- cutree(tree = as.dendrogram(cellline_clustering), k = 3)
-
-#Create data frame with cancertype for each cellline treated with erlotinib
-cellline_cancertype <- as.data.frame(sapply(names(cellline_groups), function(x){ 
-  unname(cellline_annotation[which(cellline_annotation$Cell_Line_Name == x), 2])
-}))
-
-#save clustering according to dendrogramm and cancertype 
-#in a new data frame called cellline_clusters
-cellline_clusters <- as.data.frame(cbind(cellline_groups, cellline_cancertype))
-colnames(cellline_clusters) <- c("Cellline cluster", "Cancertype cluster")
-```
-
-2. Clustering according to pathways:
-```{r}
-#cluster pathways: 
-pathway_clustering <- hclust(dist(t(heatmap_data)), method = "ward.D2") 
-pathway_groups <- as.data.frame(cutree(tree = as.dendrogram(pathway_clustering), k = 3))
-colnames(pathway_groups) <- "Pathway cluster"
-```
 
 Create a heatmap with the package pheatmap (pretty heatmap):
 ```{r, fig.height = 6, warning = FALSE}
 library(pheatmap)
+library(RColorBrewer)
+annotation_cancertype <- as.data.frame(annotation_cancertype)
+#Scaling of pathways
+heatmap_data <- scale(heatmap_data, scale=TRUE)
+
+#Coloring according to quantiles
+color_quantiles <- quantile(heatmap_data, seq(0, 1, 0.1))
+
 #generate heatmap with colored bars according to clusters
 pheatmap(t(heatmap_data),
          clustering_method = "ward.D2",
-         annotation_col = cellline_clusters,
-         annotation_row = pathway_groups,
+         annotation_col = annotation_cancertype,
          cutree_rows = 3, #makes white spaces between clusters
          cutree_cols = 3,
          main = "Affected pathways by erlotinib",
@@ -559,7 +531,9 @@ pheatmap(t(heatmap_data),
          cellwidth = 4,
          cellheight = 15, 
          fontsize = 10,
-         fontsize_row = 12)
+         fontsize_row = 12,
+         breaks = color_quantiles,
+         col = rev(brewer.pal(10, "RdBu")))
 ```
 
 ### 2. Heatmap with PROGENy
@@ -586,26 +560,24 @@ fviz_nbclust(t(progeny_heatmap),
 ```
 
 
-Clustering according to cellline and pathway
+Clustering of celllines according to dendrogramm and cancertype
 ```{r}
-#cluster celllines:
+library(dendextend)
 cellline_clustering <- hclust(dist(progeny_heatmap), method = "ward.D2")
 cellline_groups <- as.data.frame(cutree(tree = as.dendrogram(cellline_clustering), k = 2))
-cellline_clusters <- as.data.frame(cbind(cellline_groups, cellline_cancertype))
+cellline_clusters <- as.data.frame(cbind(cellline_groups, annotation_cancertype))
 colnames(cellline_clusters) <- c("Cellline cluster", "Cancertype cluster")
-#cluster pathways:
-pathway_clustering <- hclust(dist(t(progeny_heatmap)), method = "ward.D2") 
-pathway_groups <- as.data.frame(cutree(tree = as.dendrogram(pathway_clustering), k = 2))
-colnames(pathway_groups) <- "Pathway cluster"
 ```
 
 Create heatmap
 ```{r, fig.height = 6}
+#Coloring according to quantiles
+color_quantiles <- quantile(progeny_heatmap, seq(0, 1, 0.1))
+
 par(mar = c(8, 2, 2, 2))
 pheatmap(t(progeny_heatmap),
          clustering_method = "ward.D2",
-         annotation_col = cellline_clusters,
-         annotation_row = pathway_groups,
+         annotation_col = annotation_cancertype,
          cutree_rows = 2,
          cutree_cols = 2,
          main = "Affected pathways by erlotinib (PROGENy)",
@@ -614,31 +586,39 @@ pheatmap(t(progeny_heatmap),
          cellwidth = 5,
          cellheight = 20, 
          fontsize = 10,
-         fontsize_row = 14)
+         fontsize_row = 14,
+         breaks = color_quantiles,
+         col = rev(brewer.pal(10, "RdBu")))
 ```
 
-Venn Diagramm of celllines from heatmap cluster 2 and top15 variance celllines
+### Venn Diagramm 
+
+Venn diagramm of celllines from heatmap cluster 2, PCA and top15 variance celllines
 ```{r message = FALSE}
 library(VennDiagram)
 
 heatmap_genes_cluster2 <- rownames(cellline_clusters)[which(cellline_clusters[, 1] == 2)] #genes from cluster 2
 
+venn.list <- list("Heatmap Cluster 2" = heatmap_genes_cluster2,
+                  "Top15 variance" = table_cell_lines_var_top15[, 2], #column 2 contains celllines
+                  "PCA" = celllines_PCA)
+
 venn.plot <- venn.diagram(
-  x = list(
-    "Cellines Heatmap Cluster 2" = heatmap_genes_cluster2,
-    "top15 variance celllines" = table_cell_lines_var_top15[, 2] #column 2 contains celllines
-    ),
+  x = venn.list,
   filename = NULL, 
-  fill = c("blue", "red"), 
-  main = "Venn Diagramm of most regulated genes", 
+  fill = c("blue", "red", "green"), 
+  main = "Venn Diagramm of most regulated celllines", 
   main.fontface = 2,
   main.cex = 1.2,
   main.fontfamily = "sans", # font type of title is Arial 
   cat.fontfamily = "sans",
   cat.cex = 0.9,
-  fontfamily = "sans");
+  fontfamily = "sans",
+  cat.just = list(c(0.5, -40), c(0.2, -1), c(0,0)));
 grid.draw(venn.plot);
 
+#Save the ten celllines contained in all three vectors
+celllines_overlap <- calculate.overlap(venn.list)[[1]] #get first list, which is the intersection of all three circles
 ```
 
 ## 3. Milestone: find biomarkers
@@ -884,8 +864,34 @@ play a role in the GI50 values an the success of erlotinib treatment.
 
 
 ## 5. Milestone - final results
+### Venn Diagramm of celllines
 
-### Venn Diagramm 
+Venn diagramm of celllines from heatmap cluster 2, PCA,  top15 variance celllines and correlation with GI50
+```{r message = FALSE}
+library(VennDiagram)
+
+LogGI50_top10 <- names(sort(LogGI50_59_celllines)[1:10])
+
+venn.plot <- venn.diagram(
+  x = list(
+    "Overlap of variance, 
+    PCA and heatmap celllines" = celllines_overlap,
+    "Top 10 LogGI50" = LogGI50_top10),
+  filename = NULL, 
+  fill = c("blue", "red"), 
+  main = "Venn Diagramm of most regulated celllines", 
+  main.fontface = 2,
+  main.cex = 1.2,
+  main.fontfamily = "sans", # font type of title is Arial 
+  cat.fontfamily = "sans",
+  cat.cex = 0.9,
+  fontfamily = "sans", 
+  cat.just = list(c(0.2,-1.5), c(1.2,-3)));
+grid.draw(venn.plot);
+
+```
+
+### Venn Diagramm of genes
 ```{r}
 cor_all_genes <- sapply(rownames(e_foldchange), function(x){
   cor_test_one_gene <- cor.test(LogGI50_59_celllines, e_foldchange[x,], method = "pearson")
@@ -961,7 +967,7 @@ color_boxplot_e_treated_untreated <- sapply(colnames(e_treated_untreated_biomark
          "red", "green")})
 
 # boxplot, where treated and untreated are right next to each other
-par(mar = c(8, 2, 2, 2))
+par(mar = c(10, 4, 2, 2))
 boxplot(e_treated_untreated_biomarkers_volcano, 
         ylab = "gene expression (log2)", 
         main= "Boxplot of gene expression of the volcano biomarkers", 
