@@ -642,40 +642,29 @@ grid.draw(venn.plot);
 celllines_overlap <- calculate.overlap(venn.list)[[1]] #get first list, which is the intersection of all three circles
 ```
 
-## 3. Milestone: find biomarkers
-### MA-Plot 
-Draw an MA plot to compare the fold change to the mean expression of all genes
-```{r message = FALSE}
-#mean of gene expression of each gene over all cell lines
-e_foldchange_mean_over_cell_lines <- rowMeans(e_foldchange) #equal to e_treated_mean_over_cell_lines - e_untreated_mean_over_cell_line
-
-#determine the p-value for a paired two-sample t-test 
-p_values <- sapply(rownames(e_treated), function(x) {
-  t.test(e_treated[x,], e_untreated[x,],paired= T)$p.value}) # perform t-test and save p-values of each gene in p_vales-vector
-FDR_values <- p.adjust(p_values, method = "BH", n = length(p_values))#calculate FDR with benjamini-hochberg (BH)
-
-
-#table of results 
-statistics_values <- cbind(e_foldchange_mean_over_cell_lines, FDR_values)
-
-#install package and load ggplot2 and ggrepel
+## 3. Milestone: identify biomarkers
+In our third milestone, we want to identify those genes, which are most regulated by erlotinib.Therefore, we perform a MA plot to illustrate and select the genes, with the highest fold change. Thereafter, we further reduce the genes obtained through the MA plot according to their significance using a volcano plot. Drawing a Venn diagram, we want to illustrate, how many genes are left out due to their lower significance. With those biomarkers, we draw a density to plot of up- and downregulated genes to compare the gene expression before and after treatment. 
+### Select biomarkers with high foldchange
+Firstly, we draw an **MA plot** to compare the fold change to the mean expression of all genes. Thereby, we select only those genes, which have a higher mean foldchange than 0.25 or a lower mean foldchange than -0.25.
+```{r message = FALSE, warning=FALSE}
+#load ggplot2 and ggrepel
 library(ggplot2)
 library(ggrepel)
 
-#create matrices with the variables M and A of a MA-plot
+#create a data frame with the variables M and A of a MA-plot as well as one column, which shows, if the absolute fold change is greater than 0.25 
 M <- e_foldchange # M= log2(treated) - log2 (untreated)
 A <- 1/2*(e_treated+ e_untreated) # average log2-expression value A = 1/2 (log2(treated)+log2(untreated))
-MA <- cbind("M"= rowMeans(M), "A" = rowMeans(A), FDR_values)
+MA <- cbind("M"= rowMeans(M), "A" = rowMeans(A))
 rm(M, A)
 MA <- as.data.frame(MA)
-MA$Significant <- ifelse(MA$FDR_values < 0.05, "FDR < 0.05", "Not Sig")
+MA$High_foldchange <- ifelse(MA$M > 0.25 | MA$M < -0.25, "FC_abs > 0.25", "FC_abs < 0.25")
 
-#matrix with important genes of MA plot 
+#label genes of MA plot, which have an absolute foldchange greater than 0.5 
 MA_labeled <- MA[which(abs(MA[ , "M"]) > 0.5) , ]
 
-#MA plot labeled with important genes of MA plot
+#create a MA plot, where genes, with FC_abs > 0.25 are colored and those genes with FC_abs > 0.5 are labeled
 ggplot(data = MA)+ 
-  aes(x = A, y = M, color = Significant)+
+  aes(x = A, y = M, color = High_foldchange)+
   geom_point()+
   xlab("mean expression")+
   ylab("log fold change")+
@@ -683,25 +672,37 @@ ggplot(data = MA)+
   geom_text(data = MA_labeled, aes(A, M, label = rownames(MA_labeled)), hjust = 0, nudge_x = 0.1)+
   theme(plot.title = element_text(size = 13, face = "bold", hjust = 0.5)) # change the size and face (bold) of the title and center it (hjust=0.5)
 
+#save the highlighted biomarkers, obtained through the MA plot in biomarkers_MA
+biomarkers_MA <- rownames(MA)[which(abs(MA$M) > 0.25)]
 ```
 
-### Volcano plot
-Create volcano plot to find the genes with the highest fold change and highest significance
-
+### Select biomarker with high foldchange and high significance
+Create a **volcano plot** to find the genes, which have in addition to a high fold change, also a very high significance
 ```{r warning = FALSE, message = FALSE}
-#coloring with package enhanced volcano
-#install package EnhancedVolcano (needs ggplot2, ggrepel)
+#load libraries needed for EnhancedVolcano
 library(ggplot2)
 library(ggrepel)
 library(EnhancedVolcano)
 
-EnhancedVolcano(statistics_values, 
-                lab = rownames(statistics_values),
+#calculate the mean of foldchange over all cell lines for each gene
+e_foldchange_mean_over_cell_lines <- rowMeans(e_foldchange) 
+
+#determine the p-value for a paired two-sample t-test between the gene expression of treated and untreated samples
+p_values <- sapply(rownames(e_treated), function(x) {
+  t.test(e_treated[x,], e_untreated[x,],paired= T)$p.value}) # perform t-test and save p-values of each gene in p_values-vector
+FDR_values <- p.adjust(p_values, method = "BH", n = length(p_values))#calculate FDR with benjamini-hochberg (BH), because most of the genes are not regulated at all and with a p-value < 0.05 we would have more false-positives
+
+#create a matrix with one column for the mean foldchange and one column for FDR_values for every gene
+volcano_plot_mat <- cbind(e_foldchange_mean_over_cell_lines, FDR_values)
+
+#draw a volcano plot, where those genes, which have a FC_abs > 0.25, but also an FDR_value > 10e^-9 are labeled and highlighted in red 
+EnhancedVolcano(volcano_plot_mat, 
+                lab = rownames(volcano_plot_mat),
                 x = "e_foldchange_mean_over_cell_lines", 
-                #colname of FC values in this table (statistics_values)
-                y = "FDR_values", #colname of FDR (statistics_values)
+                y = "FDR_values",
                 title = "Volcano plot of all genes",
                 titleLabSize = 13,
+                ylab = bquote(~FDR~value),
                 pCutoff = 10e-9, #threshold for coloring significant ones
                 FCcutoff = 0.25, #threshold for coloring high FC
                 transcriptPointSize = 2,
@@ -709,47 +710,24 @@ EnhancedVolcano(statistics_values,
                 legendPosition = "right",
                 legendLabSize= 10,
                 axisLabSize = 10 
-                # subtitle = "")  remove subtitle generated by Bioconductor
                  )
+#save the highlighted biomarkers, obtained through the volcano plot in biomarkers_volcano
+biomarkers_volcano <- rownames(volcano_plot_mat)[which(abs(volcano_plot_mat[, 1]) >  0.25  & volcano_plot_mat[, 2] < 10e-9)]
 ```
 
 
-### Density plot 
-Draw a density plot only with biomarkers identified by volcano plot
-```{r}
-#save the "red" genes seen in the volcano plot in a vector for further analysis
-biomarkers_volcano <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 0.25 
-                                                   & statistics_values[, 2] < 10e-9)]
-biomarkers <- rownames(statistics_values)[which(abs(statistics_values[, 1]) > 0.25)]
-biomarkers_MA_up <- rownames(statistics_values)[which(statistics_values[, 1] > 0.25)]
-biomarkers_MA_down <- rownames(statistics_values)[which(statistics_values[, 1] < -0.25)]
-
-#Density plot with these genes (untreated vs. treated_upregulated)
-plot(density(e_untreated[biomarkers_MA_up, ]), "Density plot of gene expression of upregulated biomarkers", cex = 1.2, col = "green", ylim= c(0.0, 0.5))
-
-lines(density(e_treated[biomarkers_MA_up, ]), col = "red")
-legend("topright", legend = c("untreated", "treated"), col = c("green", "red"), pch = 15)
-
-#Density plot with these genes (untreated vs. treated_downregulated)
-plot(density(e_untreated[biomarkers_MA_down, ]), "Density plot of gene expression of downregulated biomarkers", cex = 1.2, col = "green", ylim= c(0.0, 0.7))
-
-lines(density(e_treated[biomarkers_MA_down, ]), col = "red")
-legend("topright", legend = c("untreated", "treated"), col = c("green", "red"), pch = 15)
-```
-
-
-
-### Venn Diagram
-Venn Diagramm is drawn to compare the most regulated genes by volcano plot and MA plot
+### Compare biomarkers of high foldchange and high significance
+A **Venn Diagram** is drawn to compare the most regulated genes obtained through the MA plot and through the volcano plot. This shows, how many genes were sorted out due to a lower FDR_value.
 ```{r warning = FALSE, message = FALSE}
-#Venn Diagram with biomarkers of volcano plot and MA plot
+#load library for Venn Diagram
 library(VennDiagram)
+
+#draw a Venn Diagram with biomarkers of MA and Volcano plot
 par(oma = c(2, 2, 2, 2))
-biomarkers_MA_vector <- rownames(MA_labeled)
 venn.plot <- venn.diagram(
   x = list(
     "Volcano Plot" = biomarkers_volcano,
-    "MA Plot" = biomarkers_MA_vector
+    "MA Plot" = biomarkers_MA
     ),
   filename = NULL, 
   fill = c("blue", "red"), 
@@ -759,11 +737,32 @@ venn.plot <- venn.diagram(
   main.fontfamily = "sans", # font type of title is Arial 
   cat.fontfamily = "sans",
   cat.cex = 0.9,
-  #cat.dist = 0.1, # distance between category and edge of circle
   fontfamily = "sans",
   cat.pos = c(0,0));
 grid.draw(venn.plot);
 ```
+
+### Compare gene expression of biomarkers before and after treatment  
+A **density plot** is drawn only with biomarkers identified by volcano plot to show, how the gene expression before and after erlotinib treatment changed. Therefore, we have to separate between up- and downregulated to make sure that positive and negative fold changes do not cancel each other out.
+```{r}
+#create a new vector, where up- and only downregulated volcano biomarkers are separated
+biomarkers_volcano_up <- rownames(volcano_plot_mat)[which(volcano_plot_mat[, 1] > 0.25)]
+biomarkers_volcano_down <- rownames(volcano_plot_mat)[which(volcano_plot_mat[, 1] < -0.25)]
+
+#Density plot with upregulated biomarkers_volcano to compare untreated with treated gene expression
+plot(density(e_untreated[biomarkers_volcano_up, ]), "Density plot of gene expression of upregulated biomarkers", cex = 1.2, col = "green", ylim= c(0.0, 0.5))
+
+lines(density(e_treated[biomarkers_volcano_up, ]), col = "red")
+legend("topright", legend = c("untreated", "treated"), col = c("green", "red"), pch = 15)
+
+#Density plot with downregulated biomarkers_volcano to compare untreated with treated gene expression
+plot(density(e_untreated[biomarkers_volcano_down, ]), "Density plot of gene expression of downregulated biomarkers", cex = 1.2, col = "green", ylim= c(0.0, 0.7))
+
+lines(density(e_treated[biomarkers_volcano_down, ]), col = "red")
+legend("topright", legend = c("untreated", "treated"), col = c("green", "red"), pch = 15)
+```
+
+
 
 
 ## 4. Milestone - Does the fold change of specific genes correlate with cell growth inhibition?
