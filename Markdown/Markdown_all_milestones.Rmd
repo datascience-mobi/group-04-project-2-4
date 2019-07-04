@@ -8,6 +8,17 @@ output:
 # Molecular Biotechnology, 4th term, Summer 2019
 ### Anna, Ann-Sophie und Jana
 
+### Table of content
+[1. Milestone: Broad analysis](#anchor)  
+- [Density plot](#1b)  
+- [Boxplot](#1c)  
+- [PCA](#1d)  
+- [Most regulated genes](#1e)  
+[2. Milestone: find most affected cell lines]  
+[3. Milestone: find biomarkers]  
+[4. Milestone - Does the fold change of specific genes correlate with cell growth   inhibition?]
+[5. Milestone - final results]
+
 ```{r, include=FALSE}
 #Load required packages
 library(knitr)
@@ -37,7 +48,7 @@ cellline_annotation <-read.delim("https://ndownloader.figshare.com/files/1476898
 drug_annotation <- read.delim("https://ndownloader.figshare.com/files/14768984?private_link=efb6a529eaf2d4dc6432")
 ```
 
-## 1. Broad analysis
+## 1. Milestone: Broad analysis{#anchor}
 
 ### Data preparation and annotation
 
@@ -148,7 +159,7 @@ color_vector_cancertype <- sapply(rownames(annotation), function(x){
 })
 ```
 
-### Density plot 
+### Density plot {#1b}
 To show the distribution of all gene expression values, a density plot was drawn. The black line contains all values measured for control samples (untreated). In red the distribution of the gene expressiion of all samples treated with 15 drugs is shown.
 ```{r }
 plot(density(NCI_TPW_gep_untreated), 
@@ -163,7 +174,7 @@ legend("topright",
 
 As expected, there can be hardly seen any difference between both curves. One reason for that is that the gene expression of most of the 13299 genes did not change due to the drug. 
 
-### Boxplot
+### Boxplot {#1c}
 In a next step the gene expression profile of each untreated sample was visualized in a boxplot to look, whether the complete expression profiles look the same over all samples or whether normalization is needed. 
 ```{r warning = FALSE }
 #xaxt = "n": removes labels on x-axis
@@ -227,7 +238,7 @@ legend("topright",
        inset = c(-0.22, 0))
 ```
 
-### PCA
+### PCA {#1d}
 A principal component analysis is used for dimensionality reduction. With these technique it is possible to depict most of the variance observed in the gene expression changes due to drug treatment (foldchange) over all samples. The points were colored firstly according to drug and secondly according to cancertype to see whether there are clusters corresponding to drug treatment or cancertype. 
 
 **Coloring according to drug**
@@ -306,17 +317,17 @@ rm(pca)
 
 The colors showing which cancertype a cellline belongs to seem rather random distributed in the PCA plot. No clustering between the celllines beeing part of the same cancertype can be observed. 
 
-### Most regulated genes
+### Most regulated genes {#1e}
 **Barplot** to find genes, which were mostly regulated by all cancer treatments 
 ```{r}
 #calculating the mean FC over positive FC values
 mean_FC_abs <- apply(abs(fold_changes), 1, mean)
 mean_FC_abs <- sort(mean_FC_abs, decreasing = TRUE)
 mean_FC_abs <- as.data.frame(cbind(cellline= names(mean_FC_abs[1:20]), abs_foldchange = mean_FC_abs[1:20]))
-ggplot(data=mean_FC_abs, aes(x=cellline, y=abs_foldchange)) +
+'ggplot(data=mean_FC_abs, aes(x=cellline, y=abs_foldchange)) +
     geom_bar(stat="identity")+
     ggtitle("Genes with highest mean in absolute FC")+
-    scale_x_discrete(limits= rev(rownames(mean_FC_abs)))
+    scale_x_discrete(limits= rev(rownames(mean_FC_abs)))+
     coord_flip()
 
 par(oma = c(10, 1, 1, 1))
@@ -324,7 +335,7 @@ barplot(mean_FC_abs[1:20],
         main = "Genes with highest mean in absolute FC",
         cex.main = 1.2,
         ylab = "mean FC", 
-        las = 2)
+        las = 2)'
 
 
 ```
@@ -332,7 +343,7 @@ barplot(mean_FC_abs[1:20],
 **Boxplot** of genes with highest mean FC
 ```{r}
 #FC_samples_with_highest_mean_FC contains the gene expression of the 20 biomarkers (20 columns) of all samples(819 rows) 
-FC_samples_with_highest_mean_FC <- data.matrix(as.data.frame(sapply(names(mean_FC_abs)[1:20], function(x){
+FC_samples_with_highest_mean_FC <- data.matrix(as.data.frame(sapply(mean_FC_abs$cellline, function(x){
   fold_changes[which(x == rownames(fold_changes)),]
 })))
 par(mar = c(8, 2, 2, 2))
