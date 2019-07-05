@@ -120,6 +120,7 @@ legend("topright", legend = c("untreated", "treated"), col = c("black", "red"), 
 
 
 #PCA
+#good reference for more fancy PCA: http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/
 pca <- prcomp(FC_normalized)
 
 #color PCA according to drug 

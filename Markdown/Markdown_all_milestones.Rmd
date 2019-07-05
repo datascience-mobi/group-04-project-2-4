@@ -50,17 +50,21 @@ drug_annotation <- read.delim("https://ndownloader.figshare.com/files/14768984?p
 
 ## 1. Milestone: Broad analysis{#anchor}
 
+The first part of our project was a broad analysis to get an overview of the data generated in the NCI Transcriptional Pharnacodynamics Workbench (TPW). The distribution of the data was analyzed with a density plot, as well as with a Boxplot to show whether the data is already normalized or normalization is needed for further analysis. The data of the TPW contains gene expression values for 819 samples and 13299 genes. For each of the cancer celllines the normal gene expression, as well as the gene expression after drug treatment with one of 15 drugs was measured. In a principal component analysis it was tested, whether there are clusters of samples corresponding to the same cancertype or samples treated with the same drug by coloring according to these two attributes. In the last step of the overall analysis we looked which genes were mostly regulated through the therapeutic cancer treatment.  
+
 ### Data preparation and annotation
 
-**Calculate fold change** due to drug treatment  
-The begin of the project includes some preparation of the data and annotation. Since the gene expression values are already logarithmic, the fold change caused by the drug can be calculated by substracting the untreated values (as a control of normal gene expression for each gene in each cellline) from the treated ones. 
+After loading the data of the TPW, we need some preparation and annotation of the data to perform our analysis. To show the effect of a drug on the gene expression the log2 fold change, which is a measurement for the quantitative change due to drug treatment, was used. Since the gene expression values are already logarithmic, the fold change can be calculated by substracting the untreated values (as a control of normal gene expression for each gene in each sample) from the treated ones. 
+  
+#### Calculate fold change due to drug treatment  
 
 ```{r }
 fold_changes <- NCI_TPW_gep_treated - NCI_TPW_gep_untreated
 fold_changes <- as.data.frame(fold_changes)
 ```
 
-**Renaming of cellline SK-MEL-2**  
+    
+#### Renaming of cellline SK-MEL-2 
 One problem, which occured at the first structuring of the data by using the grep() function was that the cellline name SK-MEL-2 is part of cellline SK-MEL_28. To solve this we renamed that cellline to SK-MEL-2_.  
 
 ```{r }
@@ -72,8 +76,8 @@ cellline_annotation[33, 1] <- "SK-MEL-2_"
 cellline_annotation$Cell_Line_Name <- factor(as.character(
   cellline_annotation$Cell_Line_Name))
 ```
-
-**Renaming of cancertype Non-Small Cell Lung**  
+  
+#### Renaming of cancertype Non-Small Cell Lung 
 To make the legend of the following plots smaller and clearer, we abbreviate Non-Small Cell Lung with NSCL.
 ```{r}
 #NSCL is added as new factor 
@@ -84,167 +88,190 @@ cellline_annotation[grep ("Non-Small Cell Lung", cellline_annotation$Cancer_type
 cellline_annotation$Cancer_type <- factor(as.character(
   cellline_annotation$Cancer_type))
 ```
+  
+#### Annotation of all sample names  
+A dataframe (called annotation) is created, which contains for each sample name (in 819 rows) the drug, cellline and cancertype. This annotation is later used for labeling and coloring of our plots.     
 
-**Annotation** of all sample names  
-A matrix is created, which contains for each sample name the drug, cellline and cancertype. This matrix is later used for labeling and coloring of our plots.     
-
-1. Drug
+**1. Drug**   
+For finding the drug a certain sample was treated with the function grepl was used which shows whether a drug listed in the drug_annotation is contained in the sample name (colnames of fold_changes).
 ```{r }
 sample_drug <- as.data.frame(sapply(levels(drug_annotation$Drug), grepl, 
                                     colnames(fold_changes), ignore.case = TRUE))
-  #creates table with TRUE and FALSE for each sample and drug
-rownames(sample_drug) <- colnames(fold_changes)
-drugs <- as.vector(apply(sample_drug, 1, function(x){
-  colnames(sample_drug[which(x)])
+  #creates table with TRUE and FALSE for each sample (819 rows) and drug (15 columns)
+rownames(sample_drug) <- colnames(fold_changes) #sample names as rownames
+drugs <- as.vector(apply(sample_drug, 1, function(x){ #for each row of the sample_drug dataframe (=samples)
+  #save the drug, which is the columnname in the column of the TRUE
+  colnames(sample_drug[which(x)]) 
 }))
 ```
 
-2. Cellline
+**2. Cellline**  
+The cellline was extracted from the sample name in a similar way as the drug. The two vectors with the drug and cellline of each sample were then combined in one data frame.
 ```{r }
 sample_cellline <- as.data.frame(sapply(levels(cellline_annotation$Cell_Line_Name), grepl, 
                                         colnames(fold_changes), ignore.case = TRUE)) 
-  #creates table with TRUE and FALSE for each sample and cellline
-rownames(sample_cellline) <- colnames(fold_changes)
-cellline <- as.vector(unlist(apply(sample_cellline, 1, function(x){
+  #creates table with TRUE and FALSE for each sample (819 rows) and cellline (61 columns)
+rownames(sample_cellline) <- colnames(fold_changes) #sample names as rownames
+cellline <- as.vector(unlist(apply(sample_cellline, 1, function(x){ 
+  #for each row of the sample_drug dataframe (=samples)
+  #save the cellline, which is the columnname in the column of the TRUE
   colnames(sample_cellline[which(x)])
 })))
 
+#annotation with drugs and celllines in columns for each of the samples (819 rows)
 annotation <- cbind("Drug" = drugs, "Cellline" = cellline)
 rownames(annotation) <- colnames(fold_changes)
 ```
 
-3. Cancertype
+**3. Cancertype**
+In the cellline_annotation each cellline is assigned to one of seven different cancertypes, which is added as a third column in our annotation. 
 ```{r }
 cancertype <- sapply(annotation[, 2], function(x){ 
-  #2nd column contains cellline annotation of samples
+  #2nd column of annotation contains cellline name of samples
+  #save the cancertype the cellline belongs to 
+  #by taking the word in cellline_annotation in column Cancer_type and in the row, where the cellline x stands
   cellline_annotation$Cancer_type[cellline_annotation$Cell_Line_Name == x]
 })
-cancertype <- as.vector(unlist(cancertype))
+cancertype <- as.vector(unlist(cancertype)) #to get a vector instead of a list of the cancertypes per sample
 
-
+#add cancertype in annotation
 annotation <- cbind(annotation, "Cancertype" = cancertype)
+#Remove all variables which are no longer needed
 rm(drugs, sample_drug, cellline, sample_cellline, cancertype)
 ```
 
-**Preparation for Coloring**   
-Create a vector which assigns each drug or each cancertype a color. These color vectors were used for coloring of the plots and creating the corresponding legends. For this purpose we searched for a color palette containing 15 colors, which are easy to distinguish. However, we only found some like RColorBrewer, which had no palette containing at least 15 distinguishable colors. Therefore we just defined our own color_palette by using the names of easily distinguishable colors. 
+#### Preparation for Coloring    
+For coloring according to drug or cancertype both a color vector was created which assigns each drug or each cancertype a color. These color vectors were used for coloring of the plots and creating the corresponding legends. For this purpose we searched for a color palette containing 15 colors, which are easy to distinguish. However, we only found some like RColorBrewer, which had no palette containing at least 15 distinguishable colors. Therefore we just defined our own color_palette by using the names of easily distinguishable colors. 
 
-1. Coloring according to drug (color_vector_all_drugs)
+**1. Coloring according to drug (color_vector_all_drugs)**
 ```{r }
 #define a color palette with 15 chosen colors
 color_palette_drug <- c("aquamarine", "brown", "forestgreen", "slategrey", 
                         "chartreuse", "darkgoldenrod1", "cadetblue","purple", 
                         "firebrick1", "deepskyblue", "gold", "violetred4", 
                         "deeppink", "plum2", "blue" )
+#assign each color one of the 15 drugs
 names(color_palette_drug) <- levels(drug_annotation$Drug)
   
-#create vector containing a color name for each sample according to drug
-color_vector_drug <- sapply(rownames(annotation), function(x){
-  unname(color_palette_drug[annotation[x, 1]]) #first column of annotation contains drug
+#create vector containing a color name for each sample according to drug (length 819)
+color_vector_drug <- sapply(rownames(annotation), function(x){ #for all samples x
+  unname(color_palette_drug[annotation[x, 1]]) #first column of annotation contains drugs
 })
 ```
 
-2. Coloring according to cancertype (color_vector_cancertype)
+**2. Coloring according to cancertype (color_vector_cancertype)**
 ```{r }
 #define a color palette with 9 chosen colors
 color_palette_cancertype <- c("aquamarine", "brown", "forestgreen", "chartreuse", 
                               "darkgoldenrod1", "cadetblue","purple", 
                               "firebrick1", "deepskyblue")
 
+#each color is assigned the name of the 9 cancertypes
 names(color_palette_cancertype) <- levels(cellline_annotation$Cancer_type)
 
-#create vector containing a color name for each sample according to cancertype
+#create vector containing a color name for each sample according to cancertype (length 819)
 color_vector_cancertype <- sapply(rownames(annotation), function(x){
   unname(color_palette_cancertype[annotation[x, 3]]) #3rd columns of annotation contains cancertype 
 })
 ```
 
-### Density plot {#1b}
-To show the distribution of all gene expression values, a density plot was drawn. The black line contains all values measured for control samples (untreated). In red the distribution of the gene expressiion of all samples treated with 15 drugs is shown.
+### Distribution of gene expression values for "untreated" and "treated" {#1b}
+To show the distribution of all gene expression values, a **density plot** was drawn. The black line contains all values measured for control samples (untreated). In red the distribution of the gene expressiion of all samples treated with 15 drugs is shown.
 ```{r }
 plot(density(NCI_TPW_gep_untreated), 
      "Density plot of gene expression", 
-     cex.main = 1.2)
+     cex.main = 1.2) #sets size of main
 lines(density(NCI_TPW_gep_treated), col = "red")
 legend("topright", 
        legend = c("untreated", "treated"), 
-       col = c("black", "red"), 
-       pch = 15)
+       col = c("black", "red"), #colors
+       pch = 15) #filled square to show color in legend
 ```
 
-As expected, there can be hardly seen any difference between both curves. One reason for that is that the gene expression of most of the 13299 genes did not change due to the drug. 
+As expected, there can be hardly seen any difference between both curves, so the distribution is nearly the same. The main reason for that is that the gene expression of most of the 13299 genes does hardly or not at all change due to the drug. Ideally the drug should only affect genes, which have an impact specifically on cancer cells and allow them to divide endless. On the other side, other genes should not be affected to remain a functional cell. Furthermore, an upregulation of some genes and a downregulation of others could compensate each other in the density plot. 
 
-### Boxplot {#1c}
-In a next step the gene expression profile of each untreated sample was visualized in a boxplot to look, whether the complete expression profiles look the same over all samples or whether normalization is needed. 
+### Gene expression profile for untreated celllines {#1c}
+
+In a next step the gene expression profile of each untreated sample was visualized in a **boxplot** to look, whether the expression profiles look the same over all samples or whether normalization is needed. 
+
 ```{r warning = FALSE }
-#xaxt = "n": removes labels on x-axis
-#title() used to move xlab nearer to the axis
+#par used to set graphical parameters
+#mar gives the margin size
+#xpd = "TRUE" to plot legend outside of the plot
 par(mar = c(4, 4, 4, 7.5), xpd = "TRUE")
 boxplot(NCI_TPW_gep_untreated, 
-        xaxt = "n", 
+        xaxt = "n", #removes labels on x-axis
         ylab = "Gene expression profile", 
         vertical =  T, 
         cex.main = 1.2,
         main = "Gene expression profile of untreated NCI60 celllines")
-title(xlab = "Samples", line = 1.0)
+title(xlab = "Samples", line = 1.0) #used to create a xlab nearer to the axis
 ```
 
-In the boxplot sudden differences occuring with a regular pattern can be observed. An explanation for that could be that the gene expression of the samples was measured at different points of time or at different laboratories. This raised the question, whether these batches match with the 15 drugs these control measurements of untreated expressions were made. Therefor, the boxes were colored according to the drug the control was used for.   
+In the boxplot differences occuring after a certain number of samples can be observed. An explanation for that could be that the gene expression of the samples was measured at different points of time or even at different laboratories. This raised the question, whether these batches match with the 15 drugs these control measurements of untreated expressions were made. Therefore, the boxes were **colored according to the drug** the control was used for.   
 
-**Color plot according to drugs**
 ```{r warning = FALSE}
 par(mar = c(4, 4, 4, 7.5), xpd = "TRUE")
 boxplot(NCI_TPW_gep_untreated, 
-        xaxt = "n", 
+        xaxt = "n", #removes labels on x-axis
         ylab = "Gene expression profile", 
         vertical =  T, 
         main = "Gene expression profile of untreated NCI60 celllines", 
         cex.main = 1.2,
         boxcol = color_vector_drug)
-title(xlab = "Samples", line = 1.0)
+title(xlab = "Samples", line = 1.0) #used to create a xlab nearer to the axis
 legend("topright", 
        legend = names(color_palette_drug), 
        col = color_palette_drug,
-       inset = c(-0.22, 0),
-       pch = 19)
+       inset = c(-0.22, 0), #moves legend to the right
+       pch = 19) #type of points in legend
 ```
 
 Since the batches exactly match the different drugs for which the untreated expression was determined, a **normalization** is necessary if the values over the various drugs should be comparable. 
+
 ```{r warning = FALSE}
-#each sample should have mean 0 and sd 1
-untreated_normalized <- apply(NCI_TPW_gep_untreated, 2, function(x){
+#each sample should have mean 0 and sd 1 in the untreated and treated table
+#this is achieve by substracting the mean and dividing through the standard deviation of the sample
+untreated_normalized <- apply(NCI_TPW_gep_untreated, 2, function(x){ 
+  #for all samples (columns in NCI_TPW_gep_untreated)
   (x - mean(x)) / sd(x)
 })
 treated_normalized <- apply(NCI_TPW_gep_treated, 2, function(x){
   (x - mean(x)) / sd(x)
 })
 
+#the fold change is calculated from the normalized data
 FC_normalized <- treated_normalized - untreated_normalized
 
 #boxplot of normalized untreated values
 par(mar = c(4, 4, 4, 7.5), xpd = "TRUE")
 boxplot(untreated_normalized, 
-        xaxt = "n", 
+        xaxt = "n", #removes labels on x-axis
         ylab = "Gene expression profile", 
         vertical =  T, 
         main = "Normalized gene expression profile of untreated NCI60 celllines",
         cex.main = 1.2, 
         boxcol = color_vector_drug)
-title(xlab = "Samples", line = 1.0)
+title(xlab = "Samples", line = 1.0) #used to create a xlab nearer to the axis
 legend("topright",
        legend = names(color_palette_drug), 
        col = color_palette_drug, 
-       pch = 19,
-       inset = c(-0.22, 0))
+       pch = 19, #type of points in legend
+       inset = c(-0.22, 0)) #moves legend to the right
 ```
 
-### PCA {#1d}
+### Principal Component Analysis {#1d}
 A principal component analysis is used for dimensionality reduction. With these technique it is possible to depict most of the variance observed in the gene expression changes due to drug treatment (foldchange) over all samples. The points were colored firstly according to drug and secondly according to cancertype to see whether there are clusters corresponding to drug treatment or cancertype. 
 
-**Coloring according to drug**
-```{r warning = FALSE, fig.height=8}
+#### Coloring according to drug
+```{r warning = FALSE, fig.height = 10, message = FALSE}
+library(factoextra)
+
+#prcomp calculates principal components
 pca <- prcomp(FC_normalized)
 
+#set graphical parameters
+#mfrow: combine multiple plots, here 2 rows and 1 column
 par(mar = c(4, 4, 4, 7.5), mfrow = c(2, 1))
 
 #PC1 and PC2
@@ -252,45 +279,51 @@ plot(pca$rotation[,1],
      pca$rotation[,2], 
      col = color_vector_drug, 
      pch = 19, 
-     xlab = "PC1", 
-     ylab = "PC2")
-#create legend on the right side
+     #2nd column of get_eigenvalue contains percentage of explained variance
+     #round(x, digits to round): here round explained variance to one digit
+     xlab = paste("PC1 (", round(get_eigenvalue(pca)[1,2], 1), "%)"), 
+     ylab = paste("PC2 (", round(get_eigenvalue(pca)[2,2], 1), "%)"))
+#create legend centered over both plots on the right side
 legend("topright", 
        legend = names(color_palette_drug), 
        col = color_palette_drug, 
        pch = 19, 
        xpd = "TRUE",
-       inset = c(-0.22, 0.7))
-#Title: mtext = margin text, side = 3 (upside)
+       inset = c(-0.22, 0.7)) #move legend to the right and down
+#Title for both plots together: mtext = margin text, side = 3 (upside)
 mtext("PCA of FC colored according to drug", 
       side = 3, 
-      line = -2.5,
+      line = -2.5, #giving the position as a margin line
       cex = 1.2,
       font = 2, #bold
       outer = TRUE)
 
 #PC2 and PC3
-plot(pca$rotation[,1], 
+plot(pca$rotation[,2], 
      pca$rotation[,3], 
      col = color_vector_drug, 
      pch = 19, 
-     xlab = "PC1", 
-     ylab = "PC3")
+     xlab = paste("PC2 (", round(get_eigenvalue(pca)[2,2], 1), "%)"), 
+     ylab = paste("PC3 (", round(get_eigenvalue(pca)[3,2], 1), "%)"))
 
 ```
 
-In the PCA plot it can be seen that the celllines treated with the same drug accumulate in certain areas. 
+In the PCA plot it can be seen that the celllines treated with the same drug cluster in certain areas. Especially the fold change of the celllines treated with bortezomib, doxorubicin and vorinostat cluster further apart from the rest. The samples of erlotinib, on which we will focus in the second part are mostly clustered in the middle of the plot. 
 
-**Coloring according to cancertype**
-```{r warning = FALSE, fig.height=8}
+#### Coloring according to cancertype
+```{r warning = FALSE, fig.height = 10}
+#set graphical parameters
+#mfrow: combine multiple plots, here 2 rows and 1 column
 par(mar = c(4, 4, 4, 7), mfrow = c(2, 1))
 #PC1 and PC2
 plot(pca$rotation[,1], 
      pca$rotation[,2], 
      col = color_vector_cancertype, 
      pch = 19, 
-     xlab = "PC1", 
-     ylab = "PC2")
+     #2nd column of get_eigenvalue contains percentage of explained variance
+     #round(x, digits to round): here round explained variance to one digit
+     xlab = paste("PC1 (", round(get_eigenvalue(pca)[1,2], 1), "%)"), 
+     ylab = paste("PC2 (", round(get_eigenvalue(pca)[2,2], 1), "%)"))
 legend("topright",
        legend = names(color_palette_cancertype), 
        col = color_palette_cancertype, 
@@ -302,12 +335,13 @@ plot(pca$rotation[,2],
      pca$rotation[,3], 
      col = color_vector_cancertype, 
      pch = 19, 
-     xlab = "PC2", 
-     ylab = "PC3")
+     xlab = paste("PC2 (", round(get_eigenvalue(pca)[2,2], 1), "%)"), 
+     ylab = paste("PC3 (", round(get_eigenvalue(pca)[3,2], 1), "%)"))
 
+#Title for both plots together: mtext = margin text, side = 3 (upside)
 mtext("PCA of FC colored according to cancertype", 
       side = 3, 
-      line = -2.5,
+      line = -2.5, #giving the position as a margin line
       cex = 1.2,
       font = 2, #bold
       outer = TRUE)
@@ -318,34 +352,28 @@ rm(pca)
 The colors showing which cancertype a cellline belongs to seem rather random distributed in the PCA plot. No clustering between the celllines beeing part of the same cancertype can be observed. 
 
 ### Most regulated genes {#1e}
-**Barplot** to find genes, which were mostly regulated by all cancer treatments 
+In the last part of the broad analysis, we analysed which genes were most regulated over all drug treatments. For hat the mean fold change for each gene over all samples was calculated and the 20 genes with the highest mean are shown in a **barplot**. The mean fold change was calculated from the absolute numbers of the fold change, since otherwise positive and negative values would compensate each other and the mean would probably be around zero.  
 ```{r}
 #calculating the mean FC over positive FC values
 mean_FC_abs <- apply(abs(fold_changes), 1, mean)
 mean_FC_abs <- sort(mean_FC_abs, decreasing = TRUE)
-mean_FC_abs <- as.data.frame(cbind(cellline= names(mean_FC_abs[1:20]), abs_foldchange = mean_FC_abs[1:20]))
-'ggplot(data=mean_FC_abs, aes(x=cellline, y=abs_foldchange)) +
-    geom_bar(stat="identity")+
+mean_FC_abs <- as.data.frame(cbind(genes = names(mean_FC_abs[1:10]), abs_foldchange = mean_FC_abs[1:10]))
+mean_FC_abs$abs_foldchange <- as.numeric(as.character(mean_FC_abs$abs_foldchange))
+ggplot(data = mean_FC_abs, aes(x = genes, y = abs_foldchange)) +
+    geom_bar(stat = "identity")+
     ggtitle("Genes with highest mean in absolute FC")+
-    scale_x_discrete(limits= rev(rownames(mean_FC_abs)))+
+    scale_x_discrete(limits = rev(rownames(mean_FC_abs)))+ #sort celllines by increasing values
     coord_flip()
-
-par(oma = c(10, 1, 1, 1))
-barplot(mean_FC_abs[1:20], 
-        main = "Genes with highest mean in absolute FC",
-        cex.main = 1.2,
-        ylab = "mean FC", 
-        las = 2)'
-
 
 ```
 
 **Boxplot** of genes with highest mean FC
 ```{r}
 #FC_samples_with_highest_mean_FC contains the gene expression of the 20 biomarkers (20 columns) of all samples(819 rows) 
-FC_samples_with_highest_mean_FC <- data.matrix(as.data.frame(sapply(mean_FC_abs$cellline, function(x){
+FC_samples_with_highest_mean_FC <- data.matrix(as.data.frame(sapply(rownames(mean_FC_abs), function(x){
   fold_changes[which(x == rownames(fold_changes)),]
 })))
+
 par(mar = c(8, 2, 2, 2))
 boxplot(FC_samples_with_highest_mean_FC, 
       ylab = "foldchange", 
@@ -354,7 +382,6 @@ boxplot(FC_samples_with_highest_mean_FC,
       las = 2,
       outline = FALSE) 
 ```
-
 
 
 
