@@ -418,36 +418,39 @@ e_foldchange <- e_treated - e_untreated
 
 ```
 
-### Table of 15 cell lines   
-Cell lines, which showed the highest variance over all genes were selected
+### tabel of cellline  with the highest variance   
+
+Now we want to identify the celllines with the highest variance. That means that the foldchange is far apart from the mean value. Therfore wie calculate the variance of the foldchange and save the results under the variable "var_cellline". After that we create a verctor called "cellline_top15" which contains the names of the top 15 celllines with the highest variance. After thet we used the matrix "annotation" which contains the full sample name, the drug, the cellline and the cancertyp, to generate a vector called "cancertypes_top15". This vector has the cacncertype of our top 15 celllines in it. Then we use the cbind-function to generate a matrix which contains the Rank, the cellline, the variance value and the cancertype of our top 15 celllines. This matrix is henceforth referred as "table_celllines_var_top15".
 
 ```{r comment=NA, warning=FALSE}
 #select 15 cell lines with highest variance (greater than 75% quantile, sorted by decreasing value)
-var_cell_line <- apply(e_foldchange, 2, var)
-cell_line_var_greater_75quantile <- sort(var_cell_line [which (abs(var_cell_line) > quantile(abs(var_cell_line), 0.75))], decreasing = TRUE)
-cell_line_var_greater_75quantile <- round(cell_line_var_greater_75quantile, digits=5)
+var_cellline <- apply(e_foldchange, 2, var)
+cellline_var_greater_75quantile <- sort(var_cellline [which (abs(var_cellline) > quantile(abs(var_cellline), 0.75))], decreasing = TRUE)
+cellline_var_greater_75quantile <- round(cellline_var_greater_75quantile, digits=5)
 
 #add column with cell line for top15 celllines
-celllines_top15 <- as.data.frame(names(cell_line_var_greater_75quantile))
+celllines_top15 <- as.data.frame(names(cellline_var_greater_75quantile))
 
 #add column with cancertype for top15 celllines
 annotation_cancertype <- annotation[which(annotation[, "Drug"] == "erlotinib"), "Cancertype"]
 names(annotation_cancertype) <- colnames(e_foldchange)
-cancertypes_top15 <- sapply(names(cell_line_var_greater_75quantile), function(x){
+cancertypes_top15 <- sapply(names(cellline_var_greater_75quantile), function(x){
   annotation_cancertype[which(x == names(annotation_cancertype))]
 })
-table_cell_lines_var_top15 <- cbind(1:nrow(celllines_top15), celllines_top15, 
-                                    cell_line_var_greater_75quantile, cancertypes_top15)
+table_celllines_var_top15 <- cbind(1:nrow(celllines_top15), celllines_top15, 
+                                    cellline_var_greater_75quantile, cancertypes_top15)
 
-colnames(table_cell_lines_var_top15) <- c("Rank", "Cellline", "Variance", "Cancertype")
-rownames(table_cell_lines_var_top15) <- c(1:nrow(celllines_top15))
+colnames(table_celllines_var_top15) <- c("Rank", "Cellline", "Variance", "Cancertype")
+rownames(table_celllines_var_top15) <- c(1:nrow(celllines_top15))
 
 library(formattable)
-formattable(table_cell_lines_var_top15)
+formattable(table_celllines_var_top15)
 ```
 
 ### PCA
-PCA is performed to find cell lines, which differ most from the other cell lines
+
+In addition to the variance we now perfome a PCA to find the cellines which differentiate the most from the other celllines. In the following plot the 15 celllines which differ the most from the othe cellines were labeled. The points were colored with the "color_vector_cancertypes" which we generated in our first milestone.
+
 ```{r message=FALSE, warning=FALSE}
 #PCA with transformed matrix (each point represents a sample):
 par(mar= c(4, 4, 4, 7))
@@ -476,10 +479,12 @@ text(pca$rotation[ ,1][celllines_PCA],
 ```
 ### Which pathways are affected?
 
-The aim of our last milestone was to identify the pathways which are most regulated due to erlotinib. We used two methods to create a heatmap of the pathways. In the first one Supplementary Table S2 from the NCI TPW was used. In this table 5-15 genes are listed for each of the pathways. The second method was to use the R package progeny, which scores 100 genes per pathway to calculate the pathway activity and should explain better the pathway activity since more data is regarded. 
+Now we want to identify the pathways which are most regulated due to erlotinib. We use two methods to create a heatmap of the pathways. In the first one the Supplementary Table S2 from the NCI TPW was used. In this table 5-15 genes are listed for each of the pathways. For the second method we use the R package progeny, which scores 100 genes per pathway to calculate the pathway activity. In the seconde methode we use much more genes are included and thus our results should be more precise.
 
-### 1. Pathways according Supplementary Table S2
-First the genes listed for each pathway were stored in one vector. These pathway vectors were than combined in one table called pathways. 
+### 1.Heatmap (according to Supplementary Table S2)
+
+First we have to list all the genes from table S2 of the supplementary material and save them into different vectors. After that we create a list of all pathways, therfore we used the function list to merge all the different vectors. The list is now called "pathways".
+
 ```{r}
 #assign genes to pathways (as in supplementary material)
 MAPK <- c("AURKA", "AURKB", "SON", "CENPA", "KIF11", "DUSP6", "TPX2", "EGR1")
@@ -652,7 +657,7 @@ library(VennDiagram)
 heatmap_genes_cluster2 <- rownames(cellline_clusters)[which(cellline_clusters[, 1] == 2)] #genes from cluster 2
 
 venn.list <- list("Heatmap Cluster 2" = heatmap_genes_cluster2,
-                  "Top15 variance" = table_cell_lines_var_top15[, 2], #column 2 contains celllines
+                  "Top15 variance" = table_celllines_var_top15[, 2], #column 2 contains celllines
                   "PCA" = celllines_PCA)
 
 venn.plot <- venn.diagram(
