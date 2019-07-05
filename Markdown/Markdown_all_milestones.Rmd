@@ -352,28 +352,32 @@ rm(pca)
 The colors showing which cancertype a cellline belongs to seem rather random distributed in the PCA plot. No clustering between the celllines beeing part of the same cancertype can be observed. 
 
 ### Most regulated genes {#1e}
-In the last part of the broad analysis, we analysed which genes were most regulated over all drug treatments. For hat the mean fold change for each gene over all samples was calculated and the 20 genes with the highest mean are shown in a **barplot**. The mean fold change was calculated from the absolute numbers of the fold change, since otherwise positive and negative values would compensate each other and the mean would probably be around zero.  
+In the last part of the broad analysis, we analysed which genes were most regulated over all drug treatments. For that the mean fold change for each gene over all samples was calculated and the 10 genes with the highest mean are shown in a **barplot**. The mean fold change was calculated from the absolute numbers of the fold change, since otherwise positive and negative values would compensate each other and the mean would probably be around zero.  
 ```{r}
 #calculating the mean FC over positive FC values
 mean_FC_abs <- apply(abs(fold_changes), 1, mean)
 mean_FC_abs <- sort(mean_FC_abs, decreasing = TRUE)
-mean_FC_abs <- as.data.frame(cbind(genes = names(mean_FC_abs[1:10]), abs_foldchange = mean_FC_abs[1:10]))
+mean_FC_abs <- as.data.frame(cbind(Genes = names(mean_FC_abs[1:10]), abs_foldchange = mean_FC_abs[1:10]))
 mean_FC_abs$abs_foldchange <- as.numeric(as.character(mean_FC_abs$abs_foldchange))
-ggplot(data = mean_FC_abs, aes(x = genes, y = abs_foldchange)) +
+ggplot(data = mean_FC_abs, aes(x = Genes, y = abs_foldchange)) +
     geom_bar(stat = "identity")+
+    ylab("mean fold change over all samples per gene")+
     ggtitle("Genes with highest mean in absolute FC")+
+    theme(plot.title = element_text(size = 13, face = "bold", hjust = 0.5))+ #bold and centered title
     scale_x_discrete(limits = rev(rownames(mean_FC_abs)))+ #sort celllines by increasing values
     coord_flip()
 
 ```
+The barplot shows that ATF3 has the highest mean fold change, which means that this gene is regulated the most over all cancer treatments. ATF3 (activating transcription factor 3) is an adaptive response gene, which means that it regulates the adaption to extra- or intracellular changes. Furthermore, ATF3 regulates the cell cycle and apoptosis, so it plays a crucial role in cancer progression (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2783469/). Other genes like CXCL8, which is part of the CXC chemokine family and a mediator of the inflammatory response (https://www.genecards.org/cgi-bin/carddisp.pl?gene=CXCL8), GDF15 (growth differentiation factor 15, https://www.genecards.org/cgi-bin/carddisp.pl?gene=GDF15) or DDIT3 (DNA damage inducible transcript 3, https://www.genecards.org/cgi-bin/carddisp.pl?gene=DDIT3), are also associated with cancer and should change the expression due to drug treatment. EGR1 (early growth response 1) is a transcription factor and is upregulated by mutant EGFR, which is the target of the drug erlotinib we focused on our specific analysis.
 
-**Boxplot** of genes with highest mean FC
+To visualize the distribution of the fold change of these highly regulated genes a **boxplot** over all samples was created.
 ```{r}
 #FC_samples_with_highest_mean_FC contains the gene expression of the 20 biomarkers (20 columns) of all samples(819 rows) 
 FC_samples_with_highest_mean_FC <- data.matrix(as.data.frame(sapply(rownames(mean_FC_abs), function(x){
   fold_changes[which(x == rownames(fold_changes)),]
 })))
 
+#boxplot showing the distribution of all values measured for the most regulated genes
 par(mar = c(8, 2, 2, 2))
 boxplot(FC_samples_with_highest_mean_FC, 
       ylab = "foldchange", 
@@ -383,7 +387,7 @@ boxplot(FC_samples_with_highest_mean_FC,
       outline = FALSE) 
 ```
 
-
+It can be seen that the distribution of all of the highly regulated genes varies a lot over the different samples. All of this highly regulated genes are upregulated in some samples, while they are downregulated in others. Since, most of these genes play a role in pathways related with cancer, we would have expected that they are regulated in the same direction in the various cancercells by the various drugs, which is not the case. Nevertheless, more than 75% of the samples per gene have a positive fold change and only a few samples are regulated in the other direction.
 
 
 ## **Specific analysis: Erlotinib **
@@ -422,7 +426,7 @@ e_foldchange <- e_treated - e_untreated
 
 Now we want to identify the celllines with the highest variance. That means that the foldchange is far apart from the mean value. Therfore wie calculate the variance of the foldchange and save the results under the variable "var_cellline". After that we create a verctor called "cellline_top15" which contains the names of the top 15 celllines with the highest variance. After thet we used the matrix "annotation" which contains the full sample name, the drug, the cellline and the cancertyp, to generate a vector called "cancertypes_top15". This vector has the cacncertype of our top 15 celllines in it. Then we use the cbind-function to generate a matrix which contains the Rank, the cellline, the variance value and the cancertype of our top 15 celllines. This matrix is henceforth referred as "table_celllines_var_top15".
 
-```{r comment=NA, warning=FALSE}
+```{r comment = NA, warning = FALSE}
 #select 15 cell lines with highest variance (greater than 75% quantile, sorted by decreasing value)
 var_cellline <- apply(e_foldchange, 2, var)
 cellline_var_greater_75quantile <- sort(var_cellline [which (abs(var_cellline) > quantile(abs(var_cellline), 0.75))], decreasing = TRUE)
@@ -925,14 +929,18 @@ mtext(side = 3, line = -1.2, text = cor_text, adj = c(0.01))}
 This time, the correlation value is much higher with r= 0.606 and apart from a few outliers, the sensitivity of the cell lines correlates quite well with the EGR1 fold change. Comparing 6 and 24h, the same correlation trend is seen in both scatter plots. However, the fold change of some of the most sensitive cell lines as "MDA-MB-468" or "IGR-OV1" changed dramatically between the two time points. 
 
 ## 5. Milestone - final results
-### Venn Diagramm of celllines
 
-Venn diagramm of celllines from heatmap cluster 2, PCA,  top15 variance celllines and correlation with GI50
+
+### Venn Diagram of celllines
+In Milestone 2, 10 celllines were selected from the intersection of the celllines with the highest variance, the celllines gained by PCA and the celllines from cluster 2 in the heatmap. Another **Venn Diagram** was created to show, whether these 10 celllines from Milestone 2 also have a high LogGI50 value, which means that they are sensitve to the erlotinib treatment. 
+
 ```{r message = FALSE}
 library(VennDiagram)
 
+#Save the names of the 10 most erlotinib-sensitive celllines (highest LogGI50)
 LogGI50_top10 <- names(sort(LogGI50_59_celllines)[1:10])
 
+#Venn diagram to compare celllines from Milestone 2 with the ones with highest sensitivity
 venn.plot <- venn.diagram(
   x = list(
     "Overlap of variance, 
@@ -944,12 +952,13 @@ venn.plot <- venn.diagram(
   main.fontface = 2,
   main.cex = 1.2,
   main.fontfamily = "sans", # font type of title is Arial 
-  cat.fontfamily = "sans",
+  cat.fontfamily = "sans", # font type of labels
   cat.cex = 0.9,
   fontfamily = "sans", 
-  cat.just = list(c(0.2,-1.5), c(1.2,-3)));
+  cat.just = list(c(0.2,-1.5), c(1.2,-4))); #change position of the labels
 grid.draw(venn.plot);
 
+#save the 7 celllines from the intersection
 celllines_final <- intersect(celllines_overlap, LogGI50_top10)
 
 ```
