@@ -395,11 +395,11 @@ It can be seen that the distribution of all of the highly regulated genes varies
 ## 2. Milestone: find most affected cell lines
 
 
-In the seconde milestone we want to identify celllines which are highly affected by Erlotinib treatment. First we select the 15 celllines which have the highes variance and therfore differentiate the most from the other celllines. In addition to that we also performe a PCA to verify the previously found cellines. After that we performed two different heatmaps, one containing the used genes from the paper and for the other heatmap we used the database PROGENy to get more precise results. At the end of this milestone we performe a Venn plot to compair the three different methodes and identify the cellines which occur in every method we performed.
+In the seconde milestone we want to identify celllines which are highly affected by Erlotinib treatment. First we select the 15 celllines which have the highes variance and therefore differentiate the most from the other celllines. In addition to that we also performe a PCA to verify the previously found cellines. After that we performed two different heatmaps, one containing the used genes from the paper and for the other heatmap we used the database PROGENy to get more precise results. At the end of this milestone we performe a Venn plot to compair the three different methodes and identify the cellines which occur in every method we performed.
 
 ### Data preparation 
 
-Befor we can start with our more specific Erlotinib dependent analysis , we have to prepare our data. First we generate a new matrix that only contains Erlotinib treated samples, therfore we use the grep-function. We do this with our treated "e_treated" and untreated "e_untreated" data seperatly. After that we use the scale-function to normalise our data sets. Then we rename our columns, that their colname only include the cellline and not the drug and time between treatment and sample taking. This step makes further analyses less complicated. In our last data preparation step we calculate the foldchange and name the new matrix containing the foldchange "e_foldchange."
+Befor we can start with our more specific Erlotinib dependent analysis , we have to prepare our data. First we generate a new matrix that only contains Erlotinib treated samples, therefore we use the grep-function. We do this with our treated "e_treated" and untreated "e_untreated" data seperatly. After that we use the scale-function to normalise our data sets. Then we rename our columns, that their colname only include the cellline and not the drug and time between treatment and sample taking. This step makes further analyses less complicated. In our last data preparation step we calculate the foldchange and name the new matrix containing the foldchange "e_foldchange."
 
 ```{r }
 #new matrix only with samples/columns treated with Erlotinib  (e=Erlotinib)
@@ -424,7 +424,7 @@ e_foldchange <- e_treated - e_untreated
 
 ### tabel of cellline  with the highest variance   
 
-Now we want to identify the celllines with the highest variance. That means that the foldchange is far apart from the mean value. Therfore wie calculate the variance of the foldchange and save the results under the variable "var_cellline". After that we create a verctor called "cellline_top15" which contains the names of the top 15 celllines with the highest variance. After thet we used the matrix "annotation" which contains the full sample name, the drug, the cellline and the cancertyp, to generate a vector called "cancertypes_top15". This vector has the cacncertype of our top 15 celllines in it. Then we use the cbind-function to generate a matrix which contains the Rank, the cellline, the variance value and the cancertype of our top 15 celllines. This matrix is henceforth referred as "table_celllines_var_top15".
+Now we want to identify the celllines with the highest variance. That means that the foldchange is far apart from the mean value. Therefore wie calculate the variance of the foldchange and save the results under the variable "var_cellline". After that we create a verctor called "cellline_top15" which contains the names of the top 15 celllines with the highest variance. After that we used the matrix "annotation" which contains the full sample name, the drug, the cellline and the cancertyp, to generate a vector called "cancertypes_top15". This vector has the cancertype of our top 15 celllines in it. Then we use the cbind-function to generate a matrix which contains the Rank, the cellline, the variance value and the cancertype of our top 15 celllines. This matrix is henceforth referred as "table_celllines_var_top15".
 
 ```{r comment = NA, warning = FALSE}
 #select 15 cell lines with highest variance (greater than 75% quantile, sorted by decreasing value)
@@ -487,7 +487,7 @@ Now we want to identify the pathways which are most regulated due to erlotinib. 
 
 ### 1.Heatmap (according to Supplementary Table S2)
 
-First we have to list all the genes from table S2 of the supplementary material and save them into different vectors. After that we create a list of all pathways, therfore we used the function list to merge all the different vectors. The list is now called "pathways".
+First we have to type all the genes from table S2 of the supplementary material and save them into different vectors. After that we create a table of all pathways, therefore we used the function list to merge all the different vectors. The table is now called "pathways".
 
 ```{r}
 #assign genes to pathways (as in supplementary material)
@@ -539,7 +539,8 @@ rm(MAPK, AKT_PI3K, Cell_Cycle_Checkpoint, JAK_STAT, Immunity_Related, DNA_repair
    Autophagy_recycling_starvation, Autophagy_toxic)
 ```
 
-This pathway table was then used to create the heatmap_data table, in which the mean expression over all genes assigned to a pathway is calculated for each cellline.
+Than we use the table "Pathways" to create the "heatmap_data"" table, in which the mean expression over all genes is assigned to a pathway. Cause we want to do this step for all cellines we use an apply-function.
+
 ```{r}
 #calculate mean FC over genes of one pathway for each sample
 heatmap_data <- sapply(1:length(pathways), function(x){ #for each pathway
@@ -553,7 +554,8 @@ colnames(heatmap_data) <- c(names(pathways))
 rownames(heatmap_data) <- colnames(e_foldchange)
 ```
 
-Proof how many clusters are needed with an elbow plot
+To proof how many clusters we need, we perform an elbow plot. Therefore we used the R package factoextra. For clustering we choose the Within cluster sum of squares methode (WSS). That methode try to find the perfect number of clusters to minimize the within group distance and maximize the between-group distance to get compact clusters.
+
 ```{r,  fig.height = 3, warning = FALSE, message = FALSE}
 #Elbow plot
 library(factoextra)
@@ -567,13 +569,16 @@ fviz_nbclust(t(heatmap_data),
              method = "wss") +
   labs(title = "Elbow plot: optimal number of pathway clusters")
 ```
+This elbow plots show the optimal  number of clusters for the pathways and for the celllines. The first elbow plut suggest to use two or three clusters for the celllines. Cause the detection of kink in the kurve is very subjective we tryed both possibilitys and saw that three clusters would fit better. The second cluster recommend to use three clusters. 
 
 
-Create a heatmap with the package pheatmap (pretty heatmap):
+Now we can create the heatmap. We use the package pheatmap, cause it gives the heatmap a good overall look. Fist we have to converte our previously used matrix "annotation_cancertype" into a dataframe. To see more precise clusters we choose to color the heatmap according to the quantiles.
+
 ```{r, fig.height = 6, warning = FALSE}
 library(pheatmap)
 library(RColorBrewer)
 annotation_cancertype_df <- as.data.frame(annotation_cancertype)
+
 #Scaling of pathways
 heatmap_data <- scale(heatmap_data, scale=TRUE)
 
@@ -597,15 +602,17 @@ pheatmap(t(heatmap_data),
          col = rev(brewer.pal(10, "RdBu")))
 ```
 
-### 2. Heatmap with PROGENy
+### 2. Heatmap (according to PROGENy)
 
-Using PROGENY, which scores the 100 most important genes for each pathway to depict its activity.
+For our seconde heatmap we use PROGENY, which scores the 100 most important genes for each pathway to depict its activity. This method is more precise than the previously used method in the first heatmap. The more genes you use to determine the activity of a pathway, the more accurate your results will be.
+
 ```{r warning = FALSE}
 library(progeny)
 progeny_heatmap <- progeny(e_foldchange)
 ```
 
-Proof how many clusters are needed with an elbow plot
+Befor creating the heatmap we do an elbow plot to determine how many clusters we need. 
+
 ```{r, fig.height = 3, warning = FALSE}
 #Elbow plot
 library(factoextra)
@@ -619,9 +626,10 @@ fviz_nbclust(t(progeny_heatmap),
              method = "wss") +
   labs(title = "Elbow plot: optimal number of pathway clusters")
 ```
+In both elbow plots a kink at two clusters can be seen. Therefore we use two clusters for the cellines and two clusters for the pathways.
 
 
-Clustering of celllines according to dendrogramm and cancertype
+To cluster the celllines according to the dendrogramm and cancertype we used the R package dendextend. We created a matrix called "cellline_clusters". It consist of the cellline name, the cancertype and also the clusternumber, which the cellline belongs to in the heatmap.
 ```{r}
 library(dendextend)
 cellline_clustering <- hclust(dist(progeny_heatmap), method = "ward.D2")
@@ -630,7 +638,8 @@ cellline_clusters <- as.data.frame(cbind(cellline_groups, annotation_cancertype_
 colnames(cellline_clusters) <- c("Cellline cluster", "Cancertype cluster")
 ```
 
-Create heatmap
+To create the seconde heatmap the s pheatmap package was used again. In this heatmap we also colored according to the quantile scale and not by a normal numeric scale.
+
 ```{r, fig.height = 6}
 #Coloring according to quantiles
 color_quantiles <- quantile(progeny_heatmap, seq(0, 1, 0.1))
@@ -639,7 +648,7 @@ par(mar = c(8, 2, 2, 2))
 pheatmap(t(progeny_heatmap),
          clustering_method = "ward.D2",
          annotation_col = annotation_cancertype_df,
-         cutree_rows = 2,
+         cutree_rows = 2, #make white space between the different clusters
          cutree_cols = 2,
          main = "Affected pathways by erlotinib (PROGENy)",
          mainsize = 1.2, 
@@ -651,6 +660,9 @@ pheatmap(t(progeny_heatmap),
          breaks = color_quantiles,
          col = rev(brewer.pal(10, "RdBu")))
 ```
+When camparing the two heatmaps you can see that a different number of clusters was generated by the elbow plot. While the heatmap according to the supplementary material S2 we have 3 Clusters, the second heatmap have only 2 clusters. In the second heatmap the different clusters are clealy visible, while the first heatmap does not show a very clear clusters exepte from the cluster on the left side. 
+Because the second heatmap is more precise and the clusters are better visible, we used the heatmap done with PROGENy for further analysis.
+
 
 ### Venn Diagramm 
 
