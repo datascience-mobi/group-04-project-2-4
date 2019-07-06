@@ -19,19 +19,19 @@ output:
 [4. Milestone - Does the fold change of specific genes correlate with cell growth   inhibition?]
 [5. Milestone - final results]
 
-```{r, include=FALSE}
+```{r, include = FALSE}
 #Load required packages
 library(knitr)
 ```
 
-```{r setup, include=FALSE} 
+```{r setup, include = FALSE} 
 #code and output not included in final file
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_chunk$set(cache = TRUE)
+#knitr::opts_chunk$set(cache = TRUE)
 knitr::opts_chunk$set(fig.width = 9, fig.height = 6, fig.align = "center")
 ```
 
-The project is based on the data generated in the NCI Transcriptional Pharnacodynamics Workbench (TPW) data and is divided into a broad and specific analysis. First of all, a broad analysis (milestone 1) containing all samples of the NCI60 panel with 15 different cancer drugs was performed. In the specific analysis we focused on the drug erlotinib, which is an inhibitor of EGFR. Five milestones were defined to analyse which pathways are mostly regulated due to the drug treatment. The second milestone included finding the celllines which have the strongest fold change and third one to identify biomarkers, defined as the most regulated, significant and best correlating with drug sensitivity genes. In milestone 4 the correlation between the drug sensitivity of the various celllines (GI50) and the EGR1 expression was analysed. In the last part, the results of the previous milestones are put together to show the key results of our project.
+The project is based on the data generated in the NCI Transcriptional Pharmacodynamics Workbench (TPW) data and is divided into a broad and specific analysis. First of all, a broad analysis (milestone 1) containing all samples of the NCI60 panel with 15 different cancer drugs was performed. In the specific analysis we focused on the drug erlotinib, which is an inhibitor of EGFR. Five milestones were defined to analyse which pathways are mostly regulated due to the drug treatment. The second milestone included finding the cell lines which have the strongest fold change and third one to identify biomarkers, defined as the most regulated, significant and best correlating with drug sensitivity genes. In milestone 4 the correlation between the drug sensitivity of the various cell lines (GI50) and the EGR1 expression was analysed. In the last part, the results of the previous milestones are put together to show the key results of our project.
 
 ### Load data
 Firstly, the data generated from the NCI TPW is downloaded and the various tables are saved as data frames. 
@@ -50,7 +50,7 @@ drug_annotation <- read.delim("https://ndownloader.figshare.com/files/14768984?p
 
 ## 1. Milestone: Broad analysis{#anchor}
 
-The first part of our project was a broad analysis to get an overview of the data generated in the NCI Transcriptional Pharnacodynamics Workbench (TPW). The distribution of the data was analyzed with a density plot, as well as with a boxplot to show, whether the data is already normalized or normalization is needed for further analysis. The data of the TPW contains gene expression values for 819 samples and 13299 genes. For each of the cancer celllines the normal gene expression, as well as the gene expression after drug treatment with one of 15 drugs was measured. In a principal component analysis it was tested, whether there are clusters of samples corresponding to the same cancertype or samples treated with the same drug by coloring according to these two attributes. In the last step of the overall analysis we searched for genes, which were most regulated through the therapeutic cancer treatment.  
+The first part of our project was a broad analysis to get an overview of the data generated in the NCI Transcriptional Pharnacodynamics Workbench (TPW). The distribution of the data was analyzed with a density plot, as well as with a boxplot to show, whether the data is already normalized or normalization is needed for further analysis. The data of the TPW contains gene expression values for 819 samples and 13299 genes. For each of the cancer cell lines the normal gene expression, as well as the gene expression after drug treatment with one of 15 drugs was measured. In a principal component analysis it was tested, whether there are clusters of samples corresponding to the same cancertype or samples treated with the same drug by coloring according to these two attributes. In the last step of the overall analysis we searched for genes, which were most regulated through the therapeutic cancer treatment.  
 
 ### Data preparation and annotation
 
@@ -64,8 +64,8 @@ fold_changes <- as.data.frame(fold_changes)
 ```
 
     
-#### Renaming of cellline SK-MEL-2 
-One problem, which occured at the first structuring of the data by using the grep() function was that the cellline name SK-MEL-2 is part of cellline SK-MEL_28. To solve this we renamed that cellline to SK-MEL-2_.  
+#### Renaming of cell line SK-MEL-2 
+One problem, which occured at the first structuring of the data by using the grep() function was that the cell line name SK-MEL-2 is part of cell line SK-MEL_28. To solve this we renamed that cell line to SK-MEL-2_.  
 
 ```{r }
 #SK-MEL-2_ is added as new factor 
@@ -90,7 +90,7 @@ cellline_annotation$Cancer_type <- factor(as.character(
 ```
   
 #### Annotation of all sample names  
-A dataframe (called annotation) is created, which contains for each sample name (in 819 rows) the drug, cellline and cancertype. This annotation is later used for labeling and coloring of our plots.     
+A dataframe (called annotation) is created, which contains for each sample name (in 819 rows) the drug, cell line and cancertype. This annotation is later used for labeling and coloring of our plots.     
 
 **1. Drug**   
 For finding the drug a certain sample was treated with the function grepl was used which shows whether a drug listed in the drug_annotation is contained in the sample name (colnames of fold_changes).
@@ -105,12 +105,12 @@ drugs <- as.vector(apply(sample_drug, 1, function(x){ #for each row of the sampl
 }))
 ```
 
-**2. Cellline**  
-The cellline was extracted from the sample name in a similar way as the drug. The two vectors with the drug and cellline of each sample were then combined in one data frame.
+**2. Cell line**  
+The cell line was extracted from the sample name in a similar way as the drug. The two vectors with the drug and cell line of each sample were then combined in one data frame.
 ```{r }
 sample_cellline <- as.data.frame(sapply(levels(cellline_annotation$Cell_Line_Name), grepl, 
                                         colnames(fold_changes), ignore.case = TRUE)) 
-  #creates table with TRUE and FALSE for each sample (819 rows) and cellline (61 columns)
+  #creates table with TRUE and FALSE for each sample (819 rows) and cell line (61 columns)
 rownames(sample_cellline) <- colnames(fold_changes) #sample names as rownames
 cellline <- as.vector(unlist(apply(sample_cellline, 1, function(x){ 
   #for each row of the sample_drug dataframe (=samples)
@@ -118,18 +118,18 @@ cellline <- as.vector(unlist(apply(sample_cellline, 1, function(x){
   colnames(sample_cellline[which(x)])
 })))
 
-#annotation with drugs and celllines in columns for each of the samples (819 rows)
+#annotation with drugs and cell lines in columns for each of the samples (819 rows)
 annotation <- cbind("Drug" = drugs, "Cellline" = cellline)
 rownames(annotation) <- colnames(fold_changes)
 ```
 
 **3. Cancertype**
-In the cellline_annotation each cellline is assigned to one of seven different cancertypes, which is added as a third column in our annotation. 
+In the cellline_annotation each cell line is assigned to one of seven different cancertypes, which is added as a third column in our annotation. 
 ```{r }
 cancertype <- sapply(annotation[, 2], function(x){ 
-  #2nd column of annotation contains cellline name of samples
-  #save the cancertype the cellline belongs to 
-  #by taking the word in cellline_annotation in column Cancer_type and in the row, where the cellline x stands
+  #2nd column of annotation contains cell line name of samples
+  #save the cancertype the cell line belongs to 
+  #by taking the word in cellline_annotation in column Cancer_type and in the row, where the cell line x stands
   cellline_annotation$Cancer_type[cellline_annotation$Cell_Line_Name == x]
 })
 cancertype <- as.vector(unlist(cancertype)) #to get a vector instead of a list of the cancertypes per sample
@@ -190,7 +190,7 @@ legend("topright",
 
 As expected, there can be hardly seen any difference between both curves, so the distribution is nearly the same. The main reason for that is that the gene expression of most of the 13299 genes does hardly or not at all change due to the drug. Ideally the drug should only affect genes, which have an impact specifically on cancer cells and allow them to divide endless. On the other side, other genes should not be affected to remain a functional cell. Furthermore, an upregulation of some genes and a downregulation of others could compensate each other in the density plot. 
 
-### Gene expression profile for untreated celllines {#1c}
+### Gene expression profile for untreated cell lines {#1c}
 
 In a next step the gene expression profile of each untreated sample was visualized in a **boxplot** to look, whether the expression profiles look the same over all samples or whether normalization is needed. 
 
@@ -204,7 +204,7 @@ boxplot(NCI_TPW_gep_untreated,
         ylab = "Gene expression profile", 
         vertical =  T, 
         cex.main = 1.2,
-        main = "Gene expression profile of untreated NCI60 celllines")
+        main = "Gene expression profile of untreated NCI60 cell lines")
 title(xlab = "Samples", line = 1.0) #used to create a xlab nearer to the axis
 ```
 
@@ -216,7 +216,7 @@ boxplot(NCI_TPW_gep_untreated,
         xaxt = "n", #removes labels on x-axis
         ylab = "Gene expression profile", 
         vertical =  T, 
-        main = "Gene expression profile of untreated NCI60 celllines", 
+        main = "Gene expression profile of untreated NCI60 cell lines", 
         cex.main = 1.2,
         boxcol = color_vector_drug)
 title(xlab = "Samples", line = 1.0) #used to create a xlab nearer to the axis
@@ -249,7 +249,7 @@ boxplot(untreated_normalized,
         xaxt = "n", #removes labels on x-axis
         ylab = "Gene expression profile", 
         vertical =  T, 
-        main = "Normalized gene expression profile of untreated NCI60 celllines",
+        main = "Normalized gene expression profile of untreated NCI60 cell lines",
         cex.main = 1.2, 
         boxcol = color_vector_drug)
 title(xlab = "Samples", line = 1.0) #used to create a xlab nearer to the axis
@@ -308,7 +308,7 @@ plot(pca$rotation[,2],
 
 ```
 
-In the PCA plot it can be seen that the celllines treated with the same drug cluster in certain areas. Especially the fold change of the celllines treated with bortezomib, doxorubicin and vorinostat cluster further apart from the rest. The samples of erlotinib, on which we will focus in the second part are mostly clustered in the middle of the plot. 
+In the PCA plot it can be seen that the cell lines treated with the same drug cluster in certain areas. Especially the fold change of the cell lines treated with bortezomib, doxorubicin and vorinostat cluster further apart from the rest. The samples of erlotinib, on which we will focus in the second part are mostly clustered in the middle of the plot. 
 
 #### Coloring according to cancertype
 ```{r warning = FALSE, fig.height = 10}
@@ -349,7 +349,7 @@ mtext("PCA of FC colored according to cancertype",
 rm(pca)
 ```
 
-The colors showing which cancertype a cellline belongs to seem rather random distributed in the PCA plot. No clustering between the celllines beeing part of the same cancertype can be observed. 
+The colors showing which cancertype a cell line belongs to seem rather random distributed in the PCA plot. No clustering between the cell lines beeing part of the same cancertype can be observed. 
 
 ### Most regulated genes {#1e}
 In the last part of the broad analysis, we analysed which genes were most regulated over all drug treatments. For that the mean fold change for each gene over all samples was calculated and the 10 genes with the highest mean are shown in a **barplot**. The mean fold change was calculated from the absolute numbers of the fold change, since otherwise positive and negative values would compensate each other and the mean would probably be around zero.  
@@ -364,7 +364,7 @@ ggplot(data = mean_FC_abs, aes(x = Genes, y = abs_foldchange)) +
     ylab("mean fold change over all samples per gene")+
     ggtitle("Genes with highest mean in absolute FC")+
     theme(plot.title = element_text(size = 13, face = "bold", hjust = 0.5))+ #bold and centered title
-    scale_x_discrete(limits = rev(rownames(mean_FC_abs)))+ #sort celllines by increasing values
+    scale_x_discrete(limits = rev(rownames(mean_FC_abs)))+ #sort cell lines by increasing values
     coord_flip()
 
 ```
@@ -392,25 +392,24 @@ It can be seen that the distribution of all of the highly regulated genes varies
 
 ## **Specific analysis: Erlotinib **
 
-## 2. Milestone: find most affected cell lines
+## 2. Milestone: Identify most affected cell lines
 
-
-The aim of the second milestone was to identify cell lines which are highly affected by erlotinib treatment. Firstly, we select the 15 cell lines which have the highest variance and therefore differ the most in the regulation of the various genes. Additionally, we also performe a PCA to verify the previously found cellines. After that we performed two different heatmaps, one containing the used genes from the supplementary material of the NCI TPW paper and for the other heatmap we used the database PROGENy to get more precise results. At the end of this milestone a Venn plot was created to compare the three different methodes and identify the cell lines which occur in every of our three methods.
+The aim of the second milestone is to identify cell lines, which are highly affected by erlotinib treatment using three different methods. Firstly, we select 15 cell lines, which have the highest variance and have therefore the highest changes in regulation between the different genes. Additionally, we perform a PCA to select those cell lines, which differ most from the other cell lines and verify the previously found cell lines. Afterwards, we draw two different heatmaps. The first one contains the genes used in the supplementary material of the NCI TPW paper. For the second heatmap, we use the database PROGENy to get more precise results. With the heatmaps, we select those cell lines, which form a cluster with EGFR pathway downregulation. To sum up, we compare the three different methods using a Venn plot. We thereby select those cell lines, which appear in every of our three methods.
 
 ### Data preparation 
 
-Before we can start with the erlotinib specific analysis, we have to prepare our data. Firstly, we generate a new matrix that only contains erlotinib treated samples, for which we use the grep-function. This is done with our treated "e_treated" and untreated "e_untreated" data seperately. After that we use the scale-function to normalise our data sets. Then we rename our columns, that their colname only includes the cell line and not the drug and time between treatment and sample taking, which is erlotinib and 24h for all samples. This step makes further analyses less complicated because we can directly use the colnames for labeling. In our last data preparation step we calculate the foldchange and name the new matrix containing the foldchange "e_foldchange."
+Before we start with our erlotinib specific analysis, we have to prepare our data. Firstly, we generate a new matrix that only contains erlotinib treated samples. This is done separately for our treated "e_treated" and untreated "e_untreated" data. Afterwards, we normalise our data sets and rename the columns. In our last preparation step, we calculate the foldchange and name the new matrix "e_foldchange."
 
 ```{r }
-#new matrix only with samples/columns treated with erlotinib  (e = erlotinib)
+# new matrix only with samples treated with erlotinib  (e = erlotinib)
 e_treated <- NCI_TPW_gep_treated[,grep ("erlotinib", colnames(NCI_TPW_gep_treated))]
 e_untreated <- NCI_TPW_gep_untreated[,grep ("erlotinib", colnames(NCI_TPW_gep_treated))]
 
-#z-Transformation of e_treated/e_untreated to get mean = 0 and sd = 1, equivalent to 
+# normalise matrix with scale 
 e_treated <- scale(e_treated, scale = TRUE)
 e_untreated <- scale(e_untreated, scale = TRUE)
 
-#colnames of e_treated/ e_untreated/ e_foldchange with cellline instead of complete sample name
+# change colnames according to their cell line instead of their complete sample name
 cellline <- sapply(colnames(e_treated), function(x){
   annotation[x,"Cellline"]
   }) 
@@ -419,21 +418,23 @@ colnames(e_untreated) <- cellline
 
 # calculate foldchange by substracting e_untreated from e_treated
 e_foldchange <- e_treated - e_untreated
-
 ```
 
 ### Table of cell lines with the highest variance   
 
-Now we want to identify the cell lines with the highest variance. That means that the fold changes of the various genes are spread over a wide range. Therefore we calculate the variance of the foldchange and save the results under the variable "var_cellline". After that we create a verctor called "cellline_top15" which contains the names of the top 15 cell lines with the highest variance. After that we used the matrix "annotation" which contains the full sample name, the drug, the cellline and the cancertyp, to generate a vector called "cancertypes_top15". This vector contains the cancertype of our top 15 cell lines. Then we use the cbind-function to generate a matrix which contains the rank, the cell line, the variance value and the cancertype of our top 15 celllines. This matrix is henceforth referred as "table_celllines_var_top15".
+To begin our cell line analysis, we want to identify those cell lines, which have the the highest variance of fold change. This means, that the fold changes of the various genes in those cell lines are spread over a wide range. Therefore, we calculate the variance of the foldchange for each cell line and select the 15 cell lines with the highest variance. 
 
 ```{r comment = NA, warning = FALSE}
-#select 15 cell lines with highest variance (greater than 75% quantile, sorted by decreasing value)
+# calculate the variance of each cell line
 var_cellline <- apply(e_foldchange, 2, var)
+
+# select 15 cell lines with highest variance (greater than 75% quantile, sorted by decreasing value)
 cellline_var_greater_75quantile <- sort(var_cellline [which (abs(var_cellline) > quantile(abs(var_cellline), 0.75))], decreasing = TRUE)
-#round variance to 5 digits
+
+# round variance to 5 digits
 cellline_var_greater_75quantile <- round(cellline_var_greater_75quantile, digits = 5)
 
-#create data frame with cell line names for top15 celllines
+#create data frame with cell line names for top15 cell lines
 celllines_top15 <- as.data.frame(names(cellline_var_greater_75quantile))
 
 #add column with cancertype for top15 celllines
@@ -442,39 +443,43 @@ names(annotation_cancertype) <- colnames(e_foldchange)
 cancertypes_top15 <- sapply(names(cellline_var_greater_75quantile), function(x){
   annotation_cancertype[which(x == names(annotation_cancertype))]
 })
-table_celllines_var_top15 <- cbind(1:nrow(celllines_top15), celllines_top15, 
-                                    cellline_var_greater_75quantile, cancertypes_top15)
+table_celllines_var_top15 <- cbind(1:nrow(celllines_top15), celllines_top15, cellline_var_greater_75quantile, cancertypes_top15)
 
+# change column and rownames of the table
 colnames(table_celllines_var_top15) <- c("Rank", "Cellline", "Variance", "Cancertype")
 rownames(table_celllines_var_top15) <- c(1:nrow(celllines_top15))
 
+# load library formattable to create a table with our top 15 cell lines
 library(formattable)
 formattable(table_celllines_var_top15)
 ```
 
-### PCA
+### Most divergent cell lines
 
-In addition to the variance we now perform a PCA to find the cell lines which differentiate the most from the other cell lines. In the following plot the 15 cell lines which differ the most from the other cellines were labeled. The points were colored with the "color_vector_cancertypes" which we generated in our first milestone.
+In addition to the variance, we now perform a **PCA** to find those cell lines, which differ most from the other cell lines. In the following plot, those 15 cell lines are labeled and colored according to their cancertype. 
 
-```{r message=FALSE, warning=FALSE}
-#PCA with transformed matrix (each point represents a sample):
-par(mar= c(4, 4, 4, 7))
+```{r message = FALSE, warning = FALSE}
+# draw PCA, where each point represents a cell line and is colored according to cancer type
+par(mar = c(4, 4, 4, 7))
 pca <- prcomp(e_foldchange)
 plot(pca$rotation[,1], 
      pca$rotation[,2], 
-     col=color_vector_cancertype, 
-     pch=19, 
+     col = color_vector_cancertype, 
+     pch = 19, 
      xlab = "PC1", 
-     ylab="PC2", 
+     ylab ="PC2", 
      main = "PCA of cell lines",
      cex.main = 1.2)
+
+# add legend to associate each color with a cancertype
 legend("topright", 
        legend = names(color_palette_cancertype), 
        col = color_palette_cancertype, 
        pch = 19, 
        xpd = TRUE, 
        inset = c(-0.18, 0))
-#label points
+
+# label cell lines, whose PC1 rotation value is greater than 0.14, representing the most divergent cell lines
 celllines_PCA <- names(pca$rotation[ , 1])[pca$rotation[ , 1] > 0.14]
 text(pca$rotation[ ,1][celllines_PCA], 
      pca$rotation[ ,2][celllines_PCA], 
@@ -482,13 +487,10 @@ text(pca$rotation[ ,1][celllines_PCA],
      pos = 2,
      cex = 0.6)
 ```
-### Which pathways are affected?
 
-Now we want to identify the pathways which are most regulated due to erlotinib. We use two methods to create a heatmap of the pathways. In the first one the Supplementary Table S2 from the NCI TPW was used. In this table 5-15 genes are listed for each of the pathways. For the second method we use the R package PROGENy, which scores 100 genes per pathway to calculate the pathway activity. In the seconde methode we use much more genes are included and thus our results should be more precise.
+### Affected pathways in one cell line cluster
 
-### 1.Heatmap (according to Supplementary Table S2)
-
-First we have to type all the genes from table S2 of the supplementary material and save them into different vectors. After that we create a table of all pathways, therefore we used the function list to merge all the different vectors. The table is now called "pathways".
+Lastly, we want to identify cell line clusters and pathways, which are most regulated in those clusters using a heatmap. We therefore use two methods. The **first heatmap** uses the **Supplementary Table S2** from the NCI TPW. In this table 5 to 15 genes are listed for each of the pathways. We first have to assign these genes to the pathways and can then compare the fold change of all cell lines in those genes. Using an elbow plot, we try to find good cell line clusters. Thereafter, we can visualize the differences in a heatmap.  
 
 ```{r}
 #assign genes to pathways (as in supplementary material)
@@ -540,54 +542,58 @@ rm(MAPK, AKT_PI3K, Cell_Cycle_Checkpoint, JAK_STAT, Immunity_Related, DNA_repair
    Autophagy_recycling_starvation, Autophagy_toxic)
 ```
 
-Then we use the table "Pathways" to create the "heatmap_data" table, in which the mean expression over all genes is assigned to a pathway. Cause we want to do this step for all cell lines we use an apply-function.
+After having assigned the genes to pathways, we create a "heatmap_data" matrix. We therefore calculate the mean foldchange of all genes of one pathway for each cell line and each pathway.
 
 ```{r}
 #calculate mean FC over genes of one pathway for each sample
 heatmap_data <- sapply(1:length(pathways), function(x){ #for each pathway
-  sapply(1:ncol(e_foldchange), function(y){ #for each sample
+  sapply(1:ncol(e_foldchange), function(y){ #for each cell line
     #calculate mean FC of genes of one pathway
     mean(e_foldchange[pathways[[x]], y]) 
   })
 })
 
+# change colnames to the names of the pathways and rownames to the names of the cell lines 
 colnames(heatmap_data) <- c(names(pathways))
 rownames(heatmap_data) <- colnames(e_foldchange)
 ```
 
-To proof how many clusters we need, we perform an elbow plot. Therefore we used the R package factoextra. For clustering we choose the Within cluster sum of squares methode (WSS). That methode tries
-to find the perfect number of clusters to minimize the within group distance and maximize the between-group distance to get compact clusters.
+To choose the appropiate amount of clusters, we perform an elbow plot. We thereby use the Within cluster sum of squares methode (WSS). This methode tries to minimize the within group distance and maximize the between-group distance to get compact clusters.
 
 ```{r,  fig.height = 3, warning = FALSE, message = FALSE}
-#Elbow plot
+# draw elbow plot to get optimal number of cell line clusters
 library(factoextra)
 fviz_nbclust(heatmap_data, 
              FUN = hcut, 
              method = "wss") + #within cluster sums of squares
-  labs(title = "Elbow plot: optimal number of cellline clusters")
+  labs(title = "Elbow plot: optimal number of cell line clusters")
 
+# draw elbow plot to get optimal number of pathway clusters
 fviz_nbclust(t(heatmap_data), 
              FUN = hcut, 
              method = "wss") +
   labs(title = "Elbow plot: optimal number of pathway clusters")
 ```
-This elbow plots show the optimal  number of clusters for the pathways and for the celllines. The first elbow plot suggests to use two or three clusters for the cell lines. Cause the detection of kink in the kurve is very subjective we tried both possibilities and saw that three clusters would fit better. The second elbow plot shows that three clusters are optimal. 
+The first elbow plot suggests to use two or three clusters for the cell lines. As the detection of the kink in the kurve is very subjective, we tried both possibilities, but the heatmap with three clusters looked better. For the second elbow plot, we choose three pathways clusters. 
 
 
-Now we can create the heatmap. We use the package pheatmap, because it gives the heatmap a good overall look. First we have to convert our previously used matrix "annotation_cancertype" into a dataframe. To see reduce the effect of outliers on the color sheme, we chose to color the heatmap according to the quantiles.
+With three clusters for cell lines and pathways, we can then create the heatmap. To reduce the effect of outliers on the color scheme, we choose to color the heatmap according to quantiles.
 
 ```{r, fig.height = 6, warning = FALSE}
+# load pheatmap and the color palette RcolorBrewer
 library(pheatmap)
 library(RColorBrewer)
+
+# change annotation matrix into a data fram
 annotation_cancertype_df <- as.data.frame(annotation_cancertype)
 
-#Scaling of pathways
+# scale pathways
 heatmap_data <- scale(heatmap_data, scale=TRUE)
 
-#Coloring according to quantiles
+# color according to quantiles 
 color_quantiles <- quantile(heatmap_data, seq(0, 1, 0.1))
 
-#generate heatmap with colored bars according to clusters
+# generate heatmap with colored bars according to clusters
 pheatmap(t(heatmap_data),
          clustering_method = "ward.D2",
          annotation_col = annotation_cancertype_df,
@@ -604,48 +610,53 @@ pheatmap(t(heatmap_data),
          col = rev(brewer.pal(10, "RdBu")))
 ```
 
-### 2. Heatmap (according to PROGENy)
 
-For our second heatmap we use PROGENy, which scores the 100 most important genes for each pathway to depict its activity. This method is more precise than the previously used method in the first heatmap. The more genes you use to determine the activity of a pathway, the more accurate your results will be.
+For the **second heatmap** we use the R package **PROGENy**, which scores 100 genes per pathway to calculate the pathway activity. We therefore use much more genes this time and our results should be more precise. 
 
 ```{r warning = FALSE}
+# load progeny
 library(progeny)
+
+# create progeny heatmap with the fold change of all genes in all cell lines
 progeny_heatmap <- progeny(e_foldchange)
 ```
 
-Before creating the heatmap we again do an elbow plot to determine how many clusters we need. 
+Before creating the heatmap we again draw an elbow plot to determine how many clusters are needed. 
 
 ```{r, fig.height = 3, warning = FALSE}
-#Elbow plot
+# draw elbow plot to get optimal number of cell line clusters
 library(factoextra)
 fviz_nbclust(progeny_heatmap, 
              FUN = hcut, 
              method = "wss") + #within cluster sums of squares
-  labs(title = "Elbow plot: optimal number of cellline clusters")
+  labs(title = "Elbow plot: optimal number of cell line clusters")
 
+# draw elbow plot to get optimal number of pathway clusters
 fviz_nbclust(t(progeny_heatmap), 
              FUN = hcut, 
              method = "wss") +
   labs(title = "Elbow plot: optimal number of pathway clusters")
 ```
+
 In both elbow plots a kink at two clusters can be seen. Therefore we use two clusters for the cellines and two clusters for the pathways.
 
 
-To cluster the cell lines according to the dendrogramm and cancertype we used the R package dendextend. We created a matrix called "cellline_clusters". It consist of the cell line name, the cancertype and also the cluster number, which the cellline belongs to in the heatmap.
-```{r warning = FALSE}
+Moreover, we create a dendrogramm and color the cell lines according to their cancer type. The foldchange is once again colored according to quantiles. We thereby hope to see some patter to compare the cell lines. 
+
+```{r warning = FALSE, fig.height = 6, message = FALSE}
+# load dendextend
 library(dendextend)
+
+# create matrix called "cellline_clusters", with one column for cell line, cancer type and cluster number, to which the cell line belongs to in the heatmap
 cellline_clustering <- hclust(dist(progeny_heatmap), method = "ward.D2")
 cellline_groups <- as.data.frame(cutree(tree = as.dendrogram(cellline_clustering), k = 2))
 cellline_clusters <- as.data.frame(cbind(cellline_groups, annotation_cancertype_df))
 colnames(cellline_clusters) <- c("Cellline cluster", "Cancertype cluster")
-```
 
-To create the second heatmap the pheatmap package was used again. In this heatmap we also colored according to the quantile scale and not by a normal numeric scale.
-
-```{r, fig.height = 6}
-#Coloring according to quantiles
+# Color according to quantiles
 color_quantiles <- quantile(progeny_heatmap, seq(0, 1, 0.1))
 
+# generate heatmap with colored bars according to clusters
 par(mar = c(8, 2, 2, 2))
 pheatmap(t(progeny_heatmap),
          clustering_method = "ward.D2",
@@ -662,42 +673,41 @@ pheatmap(t(progeny_heatmap),
          breaks = color_quantiles,
          col = rev(brewer.pal(10, "RdBu")))
 ```
-When comparing the two heatmaps you can see that a different number of clusters was recommended by the elbow plot. While the heatmap according to the supplementary material S2 has 3 clusters, the second heatmap has only 2 clusters. In the second heatmap the different clusters are clealy visible, while the first heatmap does not show clear clusters exept from the cluster on the left side. It is very difficult to compare both heatmaps, because the cell line are in different clusters and therefore in another order.
+Looking at both heatmaps, it is difficult to compare them. Unfortunately, apart from two or three exceptions, the pathways to which the genes are assigned, do not conform. Moreover, the pathways for the first heatmap only include a small number of genes for each pathway and we simply took the mean fold change. The PROGENy heatmap on the other side takes around 100 genes per pathway and scores them, which is much more informative. Therefore, the clusters are also better visible. Furthermore,in the first heatmap, we have three clusters for the cell lines, while in the second one, we only have two. This means that the cell lines are in a different order complicating a comparison even more. 
+We therefore decided to concentrate only on the PROGENy heatmap for further analysis, as this heatmap is much more precise and the clusters are better visible. Moreover, we focus only on the second cell line cluster, because there EGFR and other proliferation promoting pathways are downregulated.
 
-The calculation for the first heatmap only includes quite a small number of genes for each pathway and simply takes there mean fold change, so the result probably do not fit well with the actual effects on the cell. Because the second heatmap is more precise (100 scored genes per pathway) and the clusters are better visible, we used the heatmap done with PROGENy for further analysis. 
+**Downregulation of VEGF, PI3K, EGFR and MAPK**
+To begin, the erlotinib target EGFR is downregulated. EGFR, also called epidermal growth factor receptor, is stimulated, as its name implies by epidermal growth factors. After its activation many differen pathways are induced like cell proliferation, survival or growth. Erlotinib also binds to the EGFR and therefore blocks those signalling pathway inhibiting tumor progression.   
+Another downregulated pathways is the MAP Kinase pathways, which is part of the Ras/ Raf signaling cascade. The MAPK is dependent on EGFR signalling and phosphorylates transcription factors like c-myc, which promote again survival and proliferation. 
+Moreover, the Phosphatidylinositol-3-Kinase (PI3K), which is part of the AKT signaling cascade, is also EGFR dependent. Akt signalling is associated with cell growth, apoptosis resistance, cell invation and also cell migration.  
+Lastly, the vascular endothelial growth factors (VEGFs) are downregulated. They bind to the VEGF receptor and promote angiogenesis, a key pathway for tumor cells to get access to nutrients and oxygen from the blood.   To conclude, all these different pathways, promoting tumor growth and survival could be inhibited by the blocking of the epidermal growth factor receptor (EGFR) with erlotinib.(https://www.sigmaaldrich.com/technical-documents/articles/biology/egf-egfr-signaling.html) 
 
-**In the second cellline cluster a downregulation in VEGF, PI3K, EGFER and MAPK takes place.**
-These pathway downregulations could be explained by erlotinib treatment. EGFR (epidermal growth factor receptor) is the target of  epidermal growth factors Amphiregulin (AREG), Betacellulin (BTC), Epiregulin (EPR), and others members of epidermal growth factor family. They bind to the receptor and induce many differen pathways. Erlotinib binds to ther EGFR and therefore blocks every signalling pathway, which is EGFR dependent. 
-The MAP Kinase is part of the Ras/ Raf signaling cascade, which is dependent of EGFR signalling. After the binding of the epidermal growth factor, MAPK is activated and phosphorylates transcription factors like c-myc, which induce the expression of genes related to cell survival and proliferation.
-Phosphatidylinositol-3-Kinase (PI3K) is part of the AKT signaling cascade, which is also a EGFR dependent pathway. After the binding of the epidermal growth factor, p85/110 binds to the ErbB receptor and activates mTOR and Akt, which than lead to an activation of transcripion factors. Akt signalling is associated with cell growth, apoptosis resistance, cell invation and also cell migration.
-Vascular endothelial growth factors (VEGFs) bind to the VEGF receptor and induce the growth of new blood vessels. This process is called angiogenesis. It is very important for tumors to have access to blood vessels because they need a lot of nutrients and oxygen. Therefore tumors produce growth factors to promote angiogenesis. All these different pathways could be inhibited by the blocking of the epidermal growth factor receptor (EGFR) with erlotinib.(https://www.sigmaaldrich.com/technical-documents/articles/biology/egf-egfr-signaling.html)
-
-**In the second cellline cluster an lightly upregulation of TNF alpha and downregulation of NFkB takes place.**
-TNF alpha is a pro-inflammatory cytokine which on the one hand could promote tumor growth, angiogenesis and on the other hand could be used as a cancer killer, because it could induce cell death and therefore could be used as a anti-cancer therapheutic.(https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2631033/)
-NFkB is associated with cell proliferation, suppresses apoptosis and could induce angiogenesis but it has also anti-tumorigenic effects but they remain unclear till today. (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5905465/)
-
-**In the second cellline cluster tumor promotion pathways like Hypoxia and JAK.STAT are upregulated.**
-In the last two it could be seen that the JAK.STAT pathway and the Hypoxia which both promotes tumor progression, oncogenesis and angiogenese were upregulated in nearly every cell line in the second cluster. Cell lines in the other cluster show nearly inverted results. (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5045092/)
+**upregulating of tumor promoting pathways like Hypoxia and JAK.STAT**
+However, erlotinib treatment also leads to a upregulation of the JAK.STAT and the Hypoxia pathway, which both promote tumor progression, oncogenesis and angiogenese in nearly every cell line. Cell lines in the left cluster, on the other hand, show nearly inverted results. (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5045092/)
 
 
 ### Venn Diagramm 
 
-To sum up this milestone we perfom a venn plot to see if our different methods to identify the cell lines which are highly affected by erlotinib treatment. In this venn plot we compare the results from the top 15 celllines we identfied with the variance ("table_celllines_var_top15"), the PCA analysis ("celllines_PCA") and the heatmap according to PROGENy ("heatmap_genes_cluster2").
+To sum up this milestone, we perfom a venn diagram to identify the cell lines, which are considered highly regulated by erlotinib in all three methods. We therefore, compare the results from the table with the highest variance, the PCA analysis and the PROGENy heatmap.
 
 ```{r message = FALSE, warning = FALSE}
+# load VennDiagram
 library(VennDiagram)
 
-heatmap_genes_cluster2 <- rownames(cellline_clusters)[which(cellline_clusters[, 1] == 2)] #genes from cluster 2
+# create vector, with cell lines of the second cluster from the PROGENy heatmap
+heatmap_celllines_cluster2 <- rownames(cellline_clusters)[which(cellline_clusters[, 1] == 2)] 
 
-venn.list <- list("Heatmap Cluster 2" = heatmap_genes_cluster2,
-                  "Top15 variance" = table_celllines_var_top15[, 2], #column 2 contains celllines
+# create list with cell lines of all three methods
+venn.list <- list("Heatmap Cluster 2" = heatmap_celllines_cluster2,
+                  "Top15 variance" = table_celllines_var_top15[, 2], 
                   "PCA" = celllines_PCA)
 
+# draw venn diagram with cell lines of the highest variance table, PCA and heatmap cluster
 venn.plot <- venn.diagram(
   x = venn.list,
   filename = NULL, 
   fill = c("blue", "red", "green"), 
-  main = "Venn Diagramm of most regulated celllines", 
+  main = "Venn Diagramm of most regulated cell lines", 
   main.fontface = 2,
   main.cex = 1.2,
   main.fontfamily = "sans", # font type of title is Arial 
@@ -707,17 +717,18 @@ venn.plot <- venn.diagram(
   cat.just = list(c(0.5, -40), c(0.2, -1), c(0,0)));
 grid.draw(venn.plot);
 
-#Save the ten celllines contained in all three vectors
-celllines_overlap <- calculate.overlap(venn.list)[[1]] #get first list, which is the intersection of all three circles
+# create vector, with ten cell lines of intersection
+celllines_overlap <- calculate.overlap(venn.list)[[1]] 
 ```
 
-In this plot we found 10 cell lines which occured in all three different methods. The cell lines from the overlap are ACHN (Renal), CAKI-1 (Prostate), HCT-15 (Colon), IGR-OV1 (Leukemia), MDA-MB-468 (CNS), NCI-H322M (Breast), NCI-H522 (Breast), OVCAR-3 (Ovarian), SK-OV-3 (NSCLC) and SN12c (Renal). These cell lines will be used for further analysis and in combination with the biomarkers in milestone 5.
+With this plot, we reduce our cell lines to a total of 10, which were selected through all three different methods. The cell lines from the intersection are ACHN (Renal), CAKI-1 (Prostate), HCT-15 (Colon), IGR-OV1 (Leukemia), MDA-MB-468 (CNS), NCI-H322M (Breast), NCI-H522 (Breast), OVCAR-3 (Ovarian), SK-OV-3 (NSCLC) and SN12c (Renal). These cell lines will be used for further analysis and in combination with the biomarkers in milestone 5.
 
 ## 3. Milestone: Identify biomarkers
-As third milestone, we want to select those genes, which are most regulated by erlotinib. Therefore, we perform an MA plot to illustrate and identify genes with the highest fold change. Thereafter, we further reduce those genes according to their significance using a volcano plot. To illustrate, how many genes are left out due to their lower significance, we draw a venn diagram. Those genes, which have a high fold change and a high significance represent our biomarkers. Selecting the biomarkers, we draw a density plot to compare the gene expression before and after treatment. 
+
+As third milestone, we want to select those genes, which are most regulated by erlotinib. Therefore, we perform a MA plot to illustrate and identify genes with the highest fold change. Thereafter, we further reduce those genes according to their significance using a volcano plot. To illustrate, how many genes are left out due to their lower significance, we draw a venn diagram. Those genes, which have a high fold change and a high significance represent our biomarkers. Selecting the biomarkers, we draw a density plot to compare the gene expression before and after treatment. 
 
 ### Select biomarkers with high foldchange
-Firstly, we draw an **MA plot** to compare the fold change to the mean expression of all genes. Thereby, we select only those genes, which have a mean foldchange higher than 0.25 or a mean foldchange lower than -0.25.
+Firstly, we draw a **MA plot** to compare the fold change to the mean expression of all genes. Thereby, we select only those genes, which have a mean foldchange higher than 0.25 or a mean foldchange lower than -0.25.
 ```{r message = FALSE, warning=FALSE}
 #load ggplot2 and ggrepel
 library(ggplot2)
@@ -726,7 +737,7 @@ library(ggrepel)
 #create data frame with variables M and A of MA-plot as well as one column, which shows, if absolute fold change is greater than 0.25 
 M <- e_foldchange # M= log2(treated) - log2 (untreated)
 A <- 1/2*(e_treated+ e_untreated) # average log2-expression value A = 1/2 (log2(treated)+log2(untreated))
-MA <- cbind("M"= rowMeans(M), "A" = rowMeans(A))
+MA <- cbind("M" = rowMeans(M), "A" = rowMeans(A))
 rm(M, A)
 MA <- as.data.frame(MA)
 MA$High_foldchange <- ifelse(MA$M > 0.25 | MA$M < -0.25, "FC_abs > 0.25", "FC_abs < 0.25")
@@ -742,7 +753,7 @@ ggplot(data = MA)+
   ylab("log fold change")+
   ggtitle("MA plot of all genes")+
   geom_text(data = MA_labeled, aes(A, M, label = rownames(MA_labeled)), hjust = 0, nudge_x = 0.1)+
-  theme(plot.title = element_text(size = 13, face = "bold", hjust = 0.5)) # change the size and face (bold) of the title and center it (hjust=0.5)
+  theme(plot.title = element_text(size = 13, face = "bold", hjust = 0.5)) # change the size and face (bold) of the title and center it (hjust = 0.5)
 
 #save highlighted biomarkers, obtained through MA plot in biomarkers_MA
 biomarkers_MA <- rownames(MA)[which(abs(MA$M) > 0.25)]
@@ -761,7 +772,7 @@ e_foldchange_mean_over_cell_lines <- rowMeans(e_foldchange)
 
 #determine p-value for a paired two-sample t-test between gene expression of treated and untreated samples
 p_values <- sapply(rownames(e_treated), function(x) {
-  t.test(e_treated[x,], e_untreated[x,],paired= T)$p.value}) # perform t-test and save p-values of each gene in p_values-vector
+  t.test(e_treated[x,], e_untreated[x,],paired = T)$p.value}) # perform t-test and save p-values of each gene in p_values-vector
 FDR_values <- p.adjust(p_values, method = "BH", n = length(p_values)) #calculate FDR with benjamini-hochberg (BH); selecting significance of genes with p-value, would give us more false-positives, because most of the genes are not regulated by erlotinib
 
 #create matrix with one column for mean foldchange and one column for FDR_values for every gene
@@ -780,7 +791,7 @@ EnhancedVolcano(volcano_plot_mat,
                 transcriptPointSize = 2,
                 transcriptLabSize = 3,
                 legendPosition = "right",
-                legendLabSize= 10,
+                legendLabSize = 10,
                 axisLabSize = 10 
                  )
 #save highlighted biomarkers, obtained through volcano plot in biomarkers_volcano
@@ -823,40 +834,40 @@ biomarkers_volcano_up <- rownames(volcano_plot_mat)[which(volcano_plot_mat[, 1] 
 biomarkers_volcano_down <- rownames(volcano_plot_mat)[which(volcano_plot_mat[, 1] < -0.25)]
 
 #Density plot with upregulated biomarkers_volcano to compare untreated with treated gene expression
-plot(density(e_untreated[biomarkers_volcano_up, ]), "Density plot of gene expression of upregulated biomarkers", cex = 1.2, col = "green", ylim= c(0.0, 0.5))
+plot(density(e_untreated[biomarkers_volcano_up, ]), "Density plot of gene expression of upregulated biomarkers", cex = 1.2, col = "green", ylim = c(0.0, 0.5))
 
 lines(density(e_treated[biomarkers_volcano_up, ]), col = "red")
 legend("topright", legend = c("untreated", "treated"), col = c("green", "red"), pch = 15)
 
 #Density plot with downregulated biomarkers_volcano to compare untreated with treated gene expression
-plot(density(e_untreated[biomarkers_volcano_down, ]), "Density plot of gene expression of downregulated biomarkers", cex = 1.2, col = "green", ylim= c(0.0, 0.7))
+plot(density(e_untreated[biomarkers_volcano_down, ]), "Density plot of gene expression of downregulated biomarkers", cex = 1.2, col = "green", ylim = c(0.0, 0.7))
 
 lines(density(e_treated[biomarkers_volcano_down, ]), col = "red")
 legend("topright", legend = c("untreated", "treated"), col = c("green", "red"), pch = 15)
 ```
-To conclude this milestone, we end up with 63 biomarkers, which have an absolute fold change greater than 0.25 and a FDR-value greater than 10e^-9. As the density plots show us, with only the biomarkers selected, we this time see a considerable difference between theuntreated and treated gene expression.
+To conclude this milestone, we end up with 63 biomarkers, which have an absolute fold change greater than 0.25 and a FDR-value greater than 10e^-9. As the density plots show us, with only the biomarkers selected, we this time see a considerable difference between the untreated and treated gene expression.
 
 
 ## 4. Milestone - Does the gene expression correlate with the drug sensitivity?
-For the forth milestone, we focus on the erlotinib target EGFR and its regulated gene EGR1. We there want to compare the GI50-values of all cell lines, which show, how much the cell growth is inhibited. This in turn represents, how sensitive the cell line is to erlotinib. Thereby, we hope to see a correlation between the untreated gene expression of EGFR and the GI50 values, because the erlotinib receptor EGFR should be more expressed in erlotinib sensitive cells. Thereafter, we correlate the fold change of EGR1 with the GI50-values. We thereby expect, that the fold change of EGR1 decreases most in erlotinib sensitive cell lines.
+For the forth milestone, we focus on the erlotinib target EGFR and its regulated gene EGR1. With those genes we want to compare the GI50-values of all cell lines, which show, how much the cell growth is inhibited. This in turn represents, how sensitive the cell line is to erlotinib. Thereby, we hope to see a correlation between the untreated gene expression of EGFR and the GI50 values, because the erlotinib receptor EGFR should be more expressed in erlotinib sensitive cells. Thereafter, we correlate the fold change of EGR1 with the GI50-values. We thereby expect, that the fold change of EGR1 decreases most in erlotinib sensitive cell lines.
 
 ### Data preparation 
 ```{r}
 # create vector of NegLogGI50 of erlotinib, which only includes cell lines, which also appear in e_foldchange
 NegLogGI50_59_celllines <- NegLogGI50 ["erlotinib", -c(8,29)] # remove cell line "COLO-205" and "MDA-N"
 
-# multiply the NegLogGI5= by -1 to get the LogGI50-values
+# multiply the NegLogGI5 = by -1 to get the LogGI50-values
 LogGI50_59_celllines <- NegLogGI50_59_celllines * (-1)
 
 
-#change colnames of e_untreated with cellline instead of complete sample name
+#change colnames of e_untreated with cell line instead of complete sample name
 colnames(e_untreated) <- cellline
 
 #create color vector to color erlotinib treated cell lines according to cancertype
 e_color_cancertype <- color_vector_cancertype[grep("erlotinib", names(color_vector_cancertype), value = TRUE)]
 ```
 
-### EGFR gene expression in the untreated celllines against GI50-values   
+### EGFR gene expression in the untreated cell lines against GI50-values   
 Firstly, we draw a **scatter plot** to show, if the expression level of EGFR without treatment correlates with the sensitivities of the cell lines. Performing Pearson correlation, we hope to see a clear correlation with a correlation value close to -1. Moreover, we plot a linear regression line, to see how well the line describes the correlation and if we can deduce the sensitivity of the cell line from the untreated gene expression of EGFR. 
 ```{r pressure, warning = FALSE}
 #draw scatter plot of  untreated gene expression level of EGFR aginst LogGI50 and color them according to the cancer type
@@ -891,7 +902,7 @@ text(LogGI50_59_celllines[labeled_celllines_EGFR], e_untreated ["EGFR", labeled_
 
 #perform Pearson correlation, to see how well LogGI50 and the foldchange correlate with each other 
 cor_EGFR <- cor.test(LogGI50_59_celllines, e_foldchange["EGFR",], method = "pearson")
-cor_EGFR_estimate <- round(cor_EGFR$estimate, digits=3)
+cor_EGFR_estimate <- round(cor_EGFR$estimate, digits = 3)
 
 # add title to scatter plot, which includes the correlation value
 cor_text <- paste("r = ", cor_EGFR_estimate)
@@ -902,7 +913,7 @@ Unfortunately, the correlation value is only -0.352 and especially the cell line
 ### EGR1 foldchange against GI50-values 
 We then draw a **scatter plot** to plot the fold change of EGR1 against the GI50-values, as this gene is regulated by EGFR. EGR1 is a transcriptional factor and is assocciated with the activiation of tumor suppressor genes like p53/TP53 and TGFB1, and plays an important role in the regulation of growth factor responses. This plot with EGR1 was also drawn for 6 h in the supplementary data provided by NCI Transcriptional Pharmacodynamics Workbench. We therefore, want to compare this with our scatter plot after 24h.
 
-```{r figEGR1 , fig.show = "hold",  fig.width= 7, fig.height=7, warning = FALSE,  message=FALSE}
+```{r figEGR1 , fig.show = "hold",  fig.width = 7, fig.height = 7, warning = FALSE,  message = FALSE}
 #Import picture shown in the Supplementary after 6h
 url <- "https://raw.githubusercontent.com/datascience-mobi/project-02-group-04/master/Project%20proposal/EGR1%20expression.PNG"
 include_graphics(url)
@@ -950,36 +961,37 @@ abline(lm (e_foldchange["EGR1", ]~ LogGI50_59_celllines))
 
 #perform Pearson correlation, to see how well LogGI50 and the foldchange correlate with each other 
 cor_EGR1 <- cor.test(LogGI50_59_celllines, e_foldchange["EGR1",], method = "pearson")
-cor_EGR1_estimate <- round(cor_EGR1$estimate, digits=3)
+cor_EGR1_estimate <- round(cor_EGR1$estimate, digits = 3)
 
 # add title to scatter plot, which includes the correlation value
 cor_text <- paste("r = ", cor_EGR1_estimate, "(***)")
 mtext(side = 3, line = -1.2, text = cor_text, adj = c(0.01))}
 
 ```
-This time, the correlation value is much higher with r= 0.606 and apart from a few outliers, the sensitivity of the cell lines correlates quite well with the EGR1 fold change. Comparing 6 and 24h, the same correlation trend is seen in both scatter plots. However, the fold change of some of the most sensitive cell lines as "MDA-MB-468" or "IGR-OV1" changed dramatically between the two time points. 
+This time, the correlation value is much higher with r = 0.606 and apart from a few outliers, the sensitivity of the cell lines correlates quite well with the EGR1 fold change. Comparing 6 and 24h, the same correlation trend is seen in both scatter plots. However, the fold change of some of the most sensitive cell lines as "MDA-MB-468" or "IGR-OV1" changed dramatically between the two time points. 
 
 ## 5. Milestone - final results
 
+In our last milestone, we further reduce our cell lines of milestone 2 by selecting only the erlotinib sensitive cell lines. Moreover, we further reduce the biomarkers by selecting only the biomarkers, which are most regulated in erlotinib sensitive cell lines. With these final biomarkers and cell lines we draw a boxplot, a foldchange-GI50 correlation plot and one single gene response plot for each biomarker to compare the changes in gene expression after erlotinib treatment and sum up our project. 
 
-### Venn Diagram of celllines
-In Milestone 2, 10 celllines were selected from the intersection of the cell lines with the highest variance, the celllines gained by PCA and the celllines from cluster 2 in the heatmap. Another **Venn Diagram** was created to show, whether these 10 celllines from Milestone 2 also have a high LogGI50 value, which means that they are sensitve to the erlotinib treatment. 
+### Select final biomarkers according to GI50 correlation
+In Milestone 2, 10 cell lines were selected from the intersection of the cell lines with the highest variance, the cell lines gained by PCA and the cell lines, which formed cluster 2 in the heatmap. We now want to compare those cell lines with the 10 cell lines, which have the highest LogGI50 and are therefore most sensitive to erlotinb using a  **Venn Diagram**. 
 
 ```{r message = FALSE}
 library(VennDiagram)
 
-#save the names of the 10 most erlotinib-sensitive celllines (highest LogGI50)
+#save the names of the 10 most erlotinib-sensitive cell lines (highest LogGI50)
 LogGI50_top10 <- names(sort(LogGI50_59_celllines)[1:10])
 
-#Venn diagram to compare celllines from Milestone 2 with the ones with highest sensitivity
+#Venn diagram to compare cell lines from Milestone 2 with the ones with highest sensitivity
 venn.plot <- venn.diagram(
   x = list(
     "Overlap of variance, 
-    PCA and heatmap celllines" = celllines_overlap,
+    PCA and heatmap cell lines" = celllines_overlap,
     "Top 10 LogGI50" = LogGI50_top10),
   filename = NULL, 
   fill = c("blue", "red"), 
-  main = "Venn Diagramm of most regulated celllines", 
+  main = "Venn Diagramm of most regulated cell lines", 
   main.fontface = 2,
   main.cex = 1.2,
   main.fontfamily = "sans", # font type of title is Arial 
@@ -989,12 +1001,12 @@ venn.plot <- venn.diagram(
   cat.just = list(c(0.2,-1.5), c(1.2,-4))); #change position of the labels
 grid.draw(venn.plot);
 
-#save the 7 celllines from the intersection
+#save the 7 cell lines from the intersection
 celllines_final <- intersect(celllines_overlap, LogGI50_top10)
 
 ```
-Seven cell lines were part of both groups, which means that they are highly regulated and sensitive to erlotinib. These 7 cell lines are used at the end to create a single gene response plot with our biomarkers. 
-
+Seven cell lines are part of both groups, which means that they are highly regulated and sensitive to erlotinib. These cell lines will be are used at the end to create a single gene response plot with our biomarkers. 
+With this plot we can compare the 10 cell lines, which are highly upregulated with the 10 cell lines, which are sensitive to erlotinib. Thereby, we find 7 final cell lines, which are represented in both groups. These cell lines are ACHN (Renal), CAKI-1 (Prostate), IGR-OV1 (Leukemia), MDA-MB-468 (CNS), NCI-H322M (Breast), NCI-H522 (Breast) and SK-OV-3 (NSCLC).
 
 ### Select final biomarkers according to GI50 correlation
 We now want to further reduce our amount of biomarkers, we selected in Milestone 3 through the MA and volcano plot. This time we want to select only those genes, which are most regulated in erlotinib sensitive and less regulated in insensitive cell lines. We therefore select 500 genes, which have the highest correlation value of the fold change against the GI50 value. Drawing a **venn diagram**, we select those biomarkers, which belong to the volcano biomarkers representing a high foldchange and a high significance, but which also belong to the 500 genes with the highest absolute fold change in erlotinib sensitive cell lines. 
@@ -1050,8 +1062,8 @@ e_foldchange_biomarkers_final <- sapply(biomarkers_final, function(x){
 
 #draw boxplot of fold change
 par(mar = c(13, 4, 2, 2))
-boxplot(e_foldchange_biomarkers_final, ylab= "foldchange", 
-        main= "Boxplot of foldchange of the volcano biomarkers", cex = 1.2, las=2)
+boxplot(e_foldchange_biomarkers_final, ylab = "foldchange", 
+        main = "Boxplot of foldchange of the volcano biomarkers", cex = 1.2, las = 2)
 ```
 Thereby, we can see that the median fold change decreased in all our biomarkers and accounts for around -0.25.
 
@@ -1083,7 +1095,7 @@ color_boxplot_e_treated_untreated <- sapply(colnames(e_treated_untreated_biomark
 par(mar = c(16, 4, 2, 2))
 boxplot(e_treated_untreated_biomarkers_final, 
         ylab = "gene expression (log2)", 
-        main= "Boxplot of gene expression of the volcano biomarkers", 
+        main = "Boxplot of gene expression of the volcano biomarkers", 
         ceex = 1.2, 
         las = 2, 
         col = color_boxplot_e_treated_untreated)
@@ -1120,7 +1132,7 @@ plot(correlation_biomarkers[,"correlation_GI50"],correlation_biomarkers[,"correl
      pch = 19,
      xlab = "logGI50", 
      ylab = "foldchange of biomarkers",        
-     main = " Correlation between biomarkers and the GI50 values of the different celllines",
+     main = " Correlation between biomarkers and the GI50 values of the different cell lines",
      cex.main = 1.2)
 
 # add legend to associate each color with one final biomarker
@@ -1151,15 +1163,15 @@ df_barplot_results <- df_barplot_results [order(df_barplot_results[,"Cancertypes
 # create barplot for each gene and color according to cancer type
 plot <- lapply(colnames(df_barplot_results)[3:7], function(gene){
   ggplot_title <- paste("Foldchange of" , gene)
-  ggplot(data=df_barplot_results, aes(x=cellline, y= df_barplot_results[ ,gene], fill=Cancertypes)) +
-    geom_bar(stat="identity")+
-    scale_fill_manual(values=c("aquamarine", "forestgreen", "chartreuse", 
+  ggplot(data = df_barplot_results, aes(x = cellline, y = df_barplot_results[ ,gene], fill = Cancertypes)) +
+    geom_bar(stat = "identity")+
+    scale_fill_manual(values = c("aquamarine", "forestgreen", "chartreuse", 
                                "cadetblue","purple", 
                                "firebrick1", "deepskyblue"))+
     ggtitle(paste0 (ggplot_title, "\n"))+
     theme(axis.title.x = element_blank())+
     theme(axis.title.y = element_blank())+
-    scale_x_discrete(limits= rownames(df_barplot_results))+
+    scale_x_discrete(limits = rownames(df_barplot_results))+
     coord_flip()
 })
 
