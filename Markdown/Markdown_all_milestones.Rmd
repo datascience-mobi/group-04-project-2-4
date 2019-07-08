@@ -1,23 +1,18 @@
 ---
 title: "Data analysis: Project 2 Group 4"
+subtitle: " Molecular Biotechnology, 4th term, Summer 2019"
+author: "Anna Muench, Ann-Sophie Kroell, Jana Braunger"
 output:
   html_document:
-    df_print: paged
-  pdf_document: default
+   # df_print: paged
+  #pdf_document: default
+    toc: TRUE # table of content true
+    toc_depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: false  ## if you want number sections at each table header
+    theme:  yeti
+    hightlight : monochrome
 ---
-# Molecular Biotechnology, 4th term, Summer 2019
-### Anna, Ann-Sophie und Jana
-
-### Table of content
-[1. Milestone: Broad analysis](#anchor)  
-- [Density plot](#1b)  
-- [Boxplot](#1c)  
-- [PCA](#1d)  
-- [Most regulated genes](#1e)  
-[2. Milestone: find most affected cell lines]  
-[3. Milestone: find biomarkers]  
-[4. Milestone - Does the fold change of specific genes correlate with cell growth   inhibition?]
-[5. Milestone - final results]
+# **Broad Analysis**
 
 ```{r, include = FALSE}
 # load required packages
@@ -48,7 +43,7 @@ cellline_annotation <-read.delim("https://ndownloader.figshare.com/files/1476898
 drug_annotation <- read.delim("https://ndownloader.figshare.com/files/14768984?private_link=efb6a529eaf2d4dc6432")
 ```
 
-## 1. Milestone: Broad analysis{#anchor}
+##   _**1. Milestone: Broad analysis**_
 
 The first part of our project is a broad analysis to get an overview of the data generated in the NCI Transcriptional Pharnacodynamics Workbench (TPW). The distribution of the data is analyzed with a density plot, as well as with a boxplot to show, whether the data is already normalized or normalization is needed for further analysis. The data of the TPW contains gene expression values for 819 samples and 13299 genes. For each of the cancer cell lines the normal gene expression, as well as the gene expression after drug treatment with one of 15 drugs was measured. In a principal component analysis it is tested, whether there are clusters of samples corresponding to the same cancertype or samples treated with the same drug by coloring according to these two attributes. In the last step of the overall analysis we search for genes, which were most regulated through the therapeutic cancer treatment.  
 
@@ -175,7 +170,7 @@ color_vector_cancertype <- sapply(rownames(annotation), function(x){
 })
 ```
 
-### Distribution of gene expression values for "untreated" and "treated" {#1b}
+### Distribution of gene expression values for "untreated" and "treated"
 To show the distribution of all gene expression values, a **density plot** is drawn. The black line contains all values measured for control samples (untreated). In red the distribution of the gene expression of all samples treated with 15 drugs is shown.
 ```{r }
 plot(density(NCI_TPW_gep_untreated), 
@@ -190,7 +185,7 @@ legend("topright",
 
 As expected, there can be hardly seen any difference between both curves, so the distribution is nearly the same. The main reason for that is that the gene expression of most of the 13299 genes does hardly or not at all change due to the drug. Ideally the drug should only affect genes, which have an impact specifically on cancer cells and allow them to divide endlessly. On the other side, other genes should not be affected to remain a functional cell. Furthermore, an upregulation of some genes and a downregulation of others could compensate each other in the density plot. 
 
-### Gene expression profile for untreated cell lines {#1c}
+### Gene expression profile for untreated cell lines
 
 In a next step the gene expression profile of each untreated sample is visualized in a **boxplot** to look, whether the expression profiles look the same over all samples or whether normalization is needed. 
 
@@ -260,7 +255,7 @@ legend("topright",
        inset = c(-0.22, 0)) # moves legend to the right
 ```
 
-### Principal Component Analysis {#1d}
+### Principal Component Analysis (PCA) 
 A principal component analysis is used for dimensionality reduction. With these technique it is possible to depict most of the variance observed in the gene expression changes due to drug treatment (foldchange) over all samples. The points are colored firstly according to drug and secondly according to cancertype to see whether there are corresponding clusters. 
 
 #### Coloring according to drug
@@ -353,12 +348,11 @@ mtext("PCA of FC colored according to cancertype",
       font = 2, # bold
       outer = TRUE)
 
-rm(pca)
 ```
 
 The colors showing which cancertype a cell line belongs to seem rather random distributed in the PCA plot. No clustering between the cell lines beeing part of the same cancertype can be observed. This means that the drug changes the gene expression in a similar way in all samples, whereas the cancertype has not that much impact on how the gene expression is changed.
 
-### Most regulated genes {#1e}
+### Most regulated genes 
 In the last part of the broad analysis, we analyse which genes are most regulated over all drug treatments. For that the mean fold change for each gene over all samples is calculated and the 10 genes with the highest mean are shown in a **barplot**. The mean fold change is calculated from the absolute numbers of the fold change, since otherwise positive and negative values would compensate each other and the mean would probably be around zero.  
 ```{r}
 # calculating the mean FC over positive FC values
@@ -377,7 +371,8 @@ ggplot(data = mean_FC_abs, aes(x = Genes, y = abs_foldchange)) +
     coord_flip()
 
 ```
-The barplot shows that ATF3 has the highest mean fold change, which means that this gene is regulated the most over all cancer treatments. ATF3 (activating transcription factor 3) is an adaptive response gene, which means that it regulates the adaption to extra- or intracellular changes. Furthermore, ATF3 regulates the cell cycle and apoptosis, so it plays a crucial role in cancer progression (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2783469/). Other genes like CXCL8, which is part of the CXC chemokine family and a mediator of the inflammatory response (https://www.genecards.org/cgi-bin/carddisp.pl?gene=CXCL8), GDF15 (growth differentiation factor 15, https://www.genecards.org/cgi-bin/carddisp.pl?gene=GDF15) or DDIT3 (DNA damage inducible transcript 3, https://www.genecards.org/cgi-bin/carddisp.pl?gene=DDIT3), are also associated with cancer and should change the expression due to drug treatment. EGR1 (early growth response 1) is a transcription factor and is upregulated by mutant EGFR (https://www.ncbi.nlm.nih.gov/pubmed/19414352), which is the target of the drug erlotinib we focused on our specific analysis.
+The barplot shows that ATF3 has the highest mean fold change, which means that this gene is regulated the most over all cancer treatments. ATF3 (activating transcription factor 3) is an adaptive response gene, which means that it regulates the adaption to extra- or intracellular changes. Furthermore, ATF3 regulates the cell cycle and apoptosis, so it plays a crucial role in cancer progression (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2783469/).
+  Other genes like CXCL8, which is part of the CXC chemokine family and a mediator of the inflammatory response (https://www.genecards.org/cgi-bin/carddisp.pl?gene=CXCL8), GDF15 (growth differentiation factor 15, https://www.genecards.org/cgi-bin/carddisp.pl?gene=GDF15) or DDIT3 (DNA damage inducible transcript 3, https://www.genecards.org/cgi-bin/carddisp.pl?gene=DDIT3), are also associated with cancer and should change the expression due to drug treatment. EGR1 (early growth response 1) is a transcription factor and is upregulated by mutant EGFR (https://www.ncbi.nlm.nih.gov/pubmed/19414352), which is the target of the drug erlotinib we focused on our specific analysis.
 
 To visualize the distribution of the fold change of these highly regulated genes a **boxplot** over all samples is created.
 ```{r}
@@ -399,9 +394,9 @@ boxplot(FC_samples_with_highest_mean_FC,
 It can be seen that the distribution of all of the highly regulated genes varies a lot over the different samples. All of these highly regulated genes are upregulated in some samples, while they are downregulated in others. Since, most of these genes play a role in pathways related with cancer, we would have expected that they are regulated in the same direction in the various cancercells by the various drugs, which is not the case. Nevertheless, more than 75% of the samples per gene have a positive fold change and only a few samples are regulated in the other direction.
 
 
-## **Specific analysis: Erlotinib **
+# **Specific analysis: Erlotinib **
 
-## 2. Milestone: Identify most affected cell lines
+##   _**2. Milestone: Identify most affected cell lines**_
 
 The aim of the second milestone is to identify cell lines, which are highly affected by erlotinib treatment using three different methods. Firstly, we select 15 cell lines, which have the highest variance and have therefore the highest changes in regulation between the different genes. Additionally, we perform a PCA to select those cell lines, which differ most from the other cell lines and verify the previously found cell lines. Afterwards, we draw two different heatmaps. The first one contains the genes used in the supplementary material of the NCI TPW paper. For the second heatmap, we use the database PROGENy to get more precise results. With the heatmaps, we select those cell lines, which form a cluster with EGFR pathway downregulation. To sum up, we compare the three different methods using a Venn plot. We thereby select those cell lines, which appear in every of our three methods.
 
@@ -691,13 +686,19 @@ Looking at both heatmaps, it is difficult to compare them. Unfortunately, apart 
 We therefore decided to concentrate only on the PROGENy heatmap for further analysis, as this heatmap is much more precise and the clusters are better visible. Moreover, we focus only on the second cell line cluster (in the heatmap on the right side), because there EGFR and other proliferation promoting pathways are strongly downregulated.
 
 **Downregulation of VEGF, PI3K, EGFR and MAPK**
-To begin, the erlotinib target EGFR is downregulated by the drug. EGFR, also called epidermal growth factor receptor, is stimulated, as its name implies by epidermal growth factors. After its activation many different pathways are induced like cell proliferation, survival or growth. Erlotinib also binds to the EGFR and therefore blocks those signalling pathway inhibiting tumor progression.   
+  
+  To begin, the erlotinib target EGFR is downregulated by the drug.
+
+EGFR, also called epidermal growth factor receptor, is stimulated, as its name implies by epidermal growth factors. After its activation many different pathways are induced like cell proliferation, survival or growth. Erlotinib also binds to the EGFR and therefore blocks those signalling pathway inhibiting tumor progression.   
+
 Another downregulated pathways is the MAP Kinase pathway, which is part of the Ras/Raf signalling cascade. The MAPK is dependent on EGFR signalling and phosphorylates transcription factors like c-myc, which promote again survival and proliferation. 
+
 Moreover, the Phosphatidylinositol-3-Kinase (PI3K), which is part of the AKT signaling cascade, is also EGFR dependent. Akt signalling is associated with cell growth, apoptosis resistance, cell invation and also cell migration.  
 Lastly, the vascular endothelial growth factors (VEGFs) are downregulated. They bind to the VEGF receptor and promote angiogenesis, a key pathway for tumor cells to get access to nutrients and oxygen from the blood. To conclude, all these different pathways, promoting tumor growth and survival are inhibited by the blocking of the epidermal growth factor receptor (EGFR) with erlotinib.(https://www.sigmaaldrich.com/technical-documents/articles/biology/egf-egfr-signaling.html) 
 
 **upregulation of tumor promoting pathways like Hypoxia and JAK.STAT**
-However, erlotinib treatment also leads to an upregulation of the JAK.STAT and the Hypoxia pathway, which both promote tumor progression, oncogenesis and angiogenese in nearly every cell line. Cell lines in the left cluster, on the other hand, show nearly inverted results. (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5045092/)
+  
+   However, Erlotinib treatment also leads to an upregulation of the JAK.STAT and the Hypoxia pathway, which both promote tumor progression, oncogenesis and angiogenese in nearly every cell line. Cell lines in the left cluster, on the other hand, show nearly inverted results. (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5045092/)
 
 
 ### Venn Diagramm 
@@ -737,7 +738,7 @@ celllines_overlap <- calculate.overlap(venn.list)[[1]]
 
 With this plot, we reduce our cell lines to a total of 10, which were selected through all three different methods. The cell lines from the intersection are ACHN (Renal), CAKI-1 (Prostate), HCT-15 (Colon), IGR-OV1 (Leukemia), MDA-MB-468 (CNS), NCI-H322M (Breast), NCI-H522 (Breast), OVCAR-3 (Ovarian), SK-OV-3 (NSCLC) and SN12c (Renal). These cell lines will be used for further analysis and in combination with the biomarkers in milestone 5.
 
-## 3. Milestone: Identify biomarkers
+##   _**3. Milestone: Identify biomarkers**_
 
 As third milestone, we want to select those genes, which are most regulated by erlotinib. Therefore, we perform an MA plot to illustrate and identify genes with the highest fold change. Thereafter, we further reduce those genes according to their significance using a volcano plot. To illustrate, how many genes are left out due to their lower significance, we draw a venn diagram. Those genes, which have a high fold change and a high significance represent our biomarkers. Selecting the biomarkers, we draw a density plot to compare the gene expression before and after treatment. 
 
@@ -872,7 +873,7 @@ legend("topright", legend = c("untreated", "treated"), col = c("green", "red"), 
 To conclude this milestone, we end up with 63 biomarkers, which have an absolute fold change greater than 0.25 and a FDR-value greater than 10e^-9. The density plots created of the biomarkers show a considerable difference between the untreated and treated gene expression, since all the rarely regulated genes are left out. 
 
 
-## 4. Milestone - Does the gene expression correlate with the drug sensitivity?
+##   _**4. Milestone - Does the gene expression correlate with the drug sensitivity?**_
 In the fourth milestone, we focus on the erlotinib target EGFR and its regulated gene EGR1. The GI50-values of all cell lines, which show, how much the cell growth is inhibited and therefor how sensitive the cell line is towards erlotinib, were compared with the expression of these genes. Thereby, we hope to see a correlation between the untreated gene expression of EGFR and the GI50 values, because the erlotinib receptor EGFR should be more expressed in erlotinib sensitive cells. Thereafter, we correlate the fold change of EGR1 with the GI50-values, since we expect, that the fold change of EGR1 decreases most in erlotinib sensitive cell lines.
 
 ### Data preparation 
@@ -996,11 +997,11 @@ mtext(side = 3, line = -1.2, text = cor_text, adj = c(0.01))
 ```
 This time, the correlation value is much higher with r = 0.606 and apart from a few outliers, the sensitivity of the cell lines correlates quite well with the EGR1 fold change. Comparing 6 and 24h, the same correlation trend is seen in both scatter plots. However, the fold change of some of the most sensitive cell lines as "MDA-MB-468" or "IGR-OV1" changed dramatically between the two time points. 
 
-## 5. Milestone - final results
+##   _**5. Milestone - final results**_
 
 In our last milestone, we further reduce our cell lines of milestone 2 by selecting only the erlotinib sensitive cell lines. Moreover, we further reduce the biomarkers by selecting only the biomarkers, which are most regulated in erlotinib sensitive cell lines. With these final biomarkers and cell lines we draw a boxplot, a foldchange-GI50 correlation plot and one single gene response plot for each biomarker to compare the changes in gene expression after erlotinib treatment and sum up our project. 
 
-### Select final biomarkers according to GI50 correlation
+### Select final cell lines according to GI50 correlation
 In Milestone 2, 10 cell lines were selected from the intersection of the cell lines with the highest variance, the cell lines gained by PCA and the cell lines, which formed cluster 2 in the heatmap. We now want to compare those cell lines with the 10 cell lines, which have the highest LogGI50 and are therefore most sensitive to erlotinb using a  **Venn Diagram**. 
 
 ```{r message = FALSE}
