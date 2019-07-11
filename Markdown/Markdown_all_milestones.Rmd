@@ -743,7 +743,7 @@ With this plot, we reduce our cell lines to a total of 10, which were selected t
 As third milestone, we want to select those genes, which are most regulated by erlotinib. Therefore, we perform an MA plot to illustrate and identify genes with the highest fold change. Thereafter, we further reduce those genes according to their significance using a volcano plot. To illustrate, how many genes are left out due to their lower significance, we draw a venn diagram. Those genes, which have a high fold change and a high significance represent our biomarkers. Selecting the biomarkers, we draw a density plot to compare the gene expression before and after treatment. 
 
 ### Select biomarkers with high foldchange
-Firstly, we draw an **MA plot** to compare the fold change to the mean expression of all genes. Thereby, we select only those genes, which have a mean fold change higher than 0.25 or a mean fold change lower than -0.25.
+Firstly, we draw an **MA plot** to compare the fold change to the average log2 expression of all genes. Thereby, we select only those genes, which have a mean fold change higher than 0.25 or a mean fold change lower than -0.25.
 ```{r message = FALSE, warning=FALSE}
 # load ggplot2 and ggrepel
 library(ggplot2)
@@ -766,7 +766,7 @@ MA_labeled <- MA[which(abs(MA[ , "M"]) > 0.5) , ]
 ggplot(data = MA)+ 
   aes(x = A, y = M, color = High_foldchange)+
   geom_point()+
-  xlab("mean expression")+
+  xlab("average log2 expression")+
   ylab("log fold change")+
   ggtitle("MA plot of all genes")+
   geom_text(data = MA_labeled, aes(A, M, label = rownames(MA_labeled)), hjust = 0, nudge_x = 0.1)+
