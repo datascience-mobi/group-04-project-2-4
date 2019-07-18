@@ -23,7 +23,7 @@ library(knitr)
 ```{r setup, include = FALSE} 
 # code and output not included in final file
 knitr::opts_chunk$set(echo = TRUE)
-# knitr::opts_chunk$set(cache = TRUE)
+knitr::opts_chunk$set(cache = TRUE)
 knitr::opts_chunk$set(fig.width = 9, fig.height = 6, fig.align = "center")
 ```
 
@@ -886,7 +886,6 @@ To conclude this milestone, we end up with 63 biomarkers, which have an absolute
 
 
 ##   _**4. Milestone - Does the gene expression correlate with the drug sensitivity?**_
-In the fourth milestone, we focus on the erlotinib target EGFR and its regulated gene EGR1. The GI50-values of all cell lines, which show, how much the cell growth is inhibited and therefor how sensitive the cell line is towards erlotinib, were compared with the expression of these genes. Thereby, we hope to see a correlation between the untreated gene expression of EGFR and the GI50 values, because the erlotinib receptor EGFR should be more expressed in erlotinib sensitive cells. Thereafter, we correlate the fold change of EGR1 with the GI50-values, since we expect, that the fold change of EGR1 decreases most in erlotinib sensitive cell lines.
 
 ### Data preparation 
 ```{r}
@@ -904,8 +903,9 @@ colnames(e_untreated) <- cellline
 e_color_cancertype <- color_vector_cancertype[grep("erlotinib", names(color_vector_cancertype), value = TRUE)]
 ```
 
+
 ### EGFR gene expression in the untreated cell lines against GI50-values   
-Firstly, we draw a **scatter plot** to show, if the expression level of EGFR without treatment correlates with the sensitivities of the cell lines. Performing a Pearson correlation, we hope to get a correlation value close to -1, since we would expect that the higher the EGFR expression, the lower is the GI50 value. Moreover, we plot a linear regression line, to see how well the line fits to the individual points and if we can deduce the sensitivity of the cell line from the untreated gene expression of EGFR. 
+
 ```{r pressure, warning = FALSE}
 # draw scatter plot of  untreated gene expression level of EGFR aginst LogGI50 and color them according to the cancer type
 par(mar = c(4, 4, 4, 7), xpd = "TRUE")
@@ -946,75 +946,13 @@ cor_EGFR_estimate <- round(cor_EGFR$estimate, digits = 3)
 cor_text <- paste("r = ", cor_EGFR_estimate)
 mtext(side = 1, line = -1.2, text = cor_text, adj = c(0.01))
 ```
-Unfortunately, the correlation value is only -0.352 and especially the cell lines with a lower untreated gene expression do not correlate well with the sensitivity of the cell line. However, most of the labeled cell lines accumulate close to the regression line. 
 
-### EGR1 foldchange against GI50-values 
-A **scatter plot** to plot the fold change of EGR1 against the GI50-values was drawn, as this gene is regulated by EGFR. EGR1 is a transcriptional factor and is assocciated with the activiation of tumor suppressor genes like p53/TP53 and TGFB1, and plays an important role in the regulation of growth factor responses. This plot with EGR1 was also drawn for 6h in the supplementary data provided by NCI Transcriptional Pharmacodynamics Workbench. We therefore, want to compare this with our scatter plot after 24h.
-
-```{r figEGR1 , fig.show = "hold",  fig.width = 7, fig.height = 7, warning = FALSE,  message = FALSE}
-# import picture shown in the Supplementary after 6h
-url <- "https://raw.githubusercontent.com/datascience-mobi/project-02-group-04/master/Project%20proposal/EGR1%20expression.PNG"
-include_graphics(url)
-
-# create new color vector, which has the same colors as the imported picture with GI50 scatter plot of 6h
-color_palette_cancertype_EGR1 <- c("red", "chartreuse", "orange", "green3", "turquoise", "hotpink", "blue", "purple", "deepskyblue")
-names(color_palette_cancertype_EGR1) <- levels(cellline_annotation$Cancer_type)
-color_vector_cancertype_EGR1 <- sapply(rownames(annotation), function(x){
-  unname(color_palette_cancertype_EGR1[annotation[x, 3]]) })
-e_color_cancertype_EGR1 <- color_vector_cancertype_EGR1[grep("erlotinib", names(color_vector_cancertype_EGR1), value = TRUE)]
-
-# draw scatter plot of foldchange of EGR1 against LogGI50 and color them according to the cancer type
-par(mar = c(4, 4, 4, 10), xpd = "TRUE")
-plot(LogGI50_59_celllines, e_foldchange ["EGR1",], 
-     col = e_color_cancertype_EGR1, 
-     pch = 19, 
-     xlab = "logGI50", 
-     ylab = "EGR1 Expression (log2, relative to control)",        
-     main = "Erlotinib 24h", 
-     cex.main = 1.2, 
-     col.main = "deepskyblue")
-
-# add legend to associate each color with a cancertype
-segments(-7.11, 0, -3.88)
-legend("topright", 
-       legend = names(color_palette_cancertype_EGR1), 
-       col = color_palette_cancertype_EGR1, 
-       inset = c(-0.3, 0),
-       pch = 19)
-
-
-# label cell lines, which are most sensitive and have a very low foldchange of EGR1 
-labeled_celllines <- names(LogGI50_59_celllines)[LogGI50_59_celllines < - 6
-                                                        & e_foldchange["EGR1", ] < 0 
-                                                 | LogGI50_59_celllines < -5 
-                                                        & e_foldchange["EGR1", ] < -3]
-text(LogGI50_59_celllines[labeled_celllines], e_foldchange ["EGR1", labeled_celllines],
-     labels = labeled_celllines,
-     cex = 0.7,
-     pos = 4)
-
-# add linear regression line
-# set clipping limit that abline is not longer than the plot itself
-clip(-7.13, -3.88, -2, 0.5)  
-abline(lm (e_foldchange["EGR1", ]~ LogGI50_59_celllines))
-
-# perform Pearson correlation, to see how well LogGI50 and the foldchange correlate with each other 
-cor_EGR1 <- cor.test(LogGI50_59_celllines, e_foldchange["EGR1",], method = "pearson")
-cor_EGR1_estimate <- round(cor_EGR1$estimate, digits = 3)
-
-# add title to scatter plot, which includes the correlation value
-cor_text <- paste("r = ", cor_EGR1_estimate, "(***)")
-mtext(side = 3, line = -1.2, text = cor_text, adj = c(0.01))
-
-```
-This time, the correlation value is much higher with r = 0.606 and apart from a few outliers, the sensitivity of the cell lines correlates quite well with the EGR1 fold change. Comparing 6 and 24h, the same correlation trend is seen in both scatter plots. However, the fold change of some of the most sensitive cell lines as "MDA-MB-468" or "IGR-OV1" changed dramatically between the two time points. 
 
 ##   _**5. Milestone - final results**_
 
-In our last milestone, we further reduce our cell lines of milestone 2 by selecting only the erlotinib sensitive cell lines. Moreover, we further reduce the biomarkers by selecting only the biomarkers, which are most regulated in erlotinib sensitive cell lines. With these final biomarkers and cell lines we draw a boxplot, a foldchange-GI50 correlation plot and one single gene response plot for each biomarker to compare the changes in gene expression after erlotinib treatment and sum up our project. 
-
 ### Select final cell lines according to GI50 correlation
-In Milestone 2, 10 cell lines were selected from the intersection of the cell lines with the highest variance, the cell lines gained by PCA and the cell lines, which formed cluster 2 in the heatmap. We now want to compare those cell lines with the 10 cell lines, which have the highest LogGI50 and are therefore most sensitive to erlotinb using a  **Venn Diagram**. 
+
+ **Venn Diagram**. 
 
 ```{r message = FALSE}
 library(VennDiagram)
@@ -1044,10 +982,10 @@ grid.draw(venn.plot);
 celllines_final <- intersect(celllines_overlap, LogGI50_top10)
 
 ```
-With this plot we can compare the 10 cell lines, which are highly upregulated, with the 10 cell lines, which are sensitive to erlotinib. Thereby, 7 final cell lines are identified, which are represented in both groups. These cell lines are ACHN (Renal), CAKI-1 (Prostate), IGR-OV1 (Leukemia), MDA-MB-468 (CNS), NCI-H322M (Breast), NCI-H522 (Breast) and SK-OV-3 (NSCLC). 
+
 
 ### Select final biomarkers according to GI50 correlation
-Additionally, we want to further reduce the amount of biomarkers, we selected in Milestone 3 through the MA and volcano plot. This time we want to select only those genes, which are most regulated in erlotinib sensitive and less regulated in insensitive cell lines. We therefore select 500 genes, which have the highest correlation value of the fold change against the GI50 value. Drawing a **venn diagram**, we select those biomarkers, which belong to the volcano biomarkers representing a high foldchange and a high significance, but which also belong to the 500 genes with the highest absolute fold change in erlotinib sensitive cell lines. 
+
 ```{r}
 # create vector, which contains the GI50 - fold change correlation value for all genes
 cor_all_genes <- sapply(rownames(e_foldchange), function(x){
@@ -1088,119 +1026,7 @@ grid.draw(venn.plot);
 biomarkers_final <- intersect(names(cor_top_500_genes), names(cor_biomarkers))
 biomarkers_final <- gsub(pattern = ".cor", replacement = "", x = biomarkers_final)
 ```
-With this plot we can compare the 63 biomarkers, which have a high foldchange and a high significance, with the 500 genes with the highest correlation. Thereby, we find 5 final biomarkers, which are represented in both groups. These biomarkers are ERCC6L, ATAD2, E2F8, MKI67 and MIR15A//DLEU2L//DLEU2.
 
-### Compare gene expression of final biomarkers 
-To get a better overview of our five final biomarkers, a **boxplot** of the **fold change** was created. This shows us the median as well as the distribution of the fold changes between the different cell lines. 
-```{r}
-# create matrix only with fold change of biomarkers
-e_foldchange_biomarkers_final <- sapply(biomarkers_final, function(x){
-  e_foldchange[x, ]
-})
-
-# draw boxplot of fold change
-par(mar = c(13, 4, 2, 2))
-boxplot(e_foldchange_biomarkers_final, 
-        ylab = "foldchange", 
-        main = "Boxplot of foldchange of the volcano biomarkers", 
-        cex = 1.2, 
-        las = 2)
-```
-Thereby, we can see that the median fold change decreased in all our biomarkers and accounts for around -0.25.
-
-To compare the gene expression before and after the treatment, we draw a **boxplot** of the **untreated vs. treated gene expression** of the biomarkers. 
-```{r}
-# create matrix only with gene expression of untreated and treated final biomarkers
-e_untreated_biomarkers_final <- sapply(biomarkers_final, function(x){
-  e_untreated[x, ]
-}) 
-e_treated_biomarkers_final <- sapply(biomarkers_final, function(x){
-  e_treated[x, ]
-})
-
-# add "treated" to colnames of gene expression of treated biomarkers to distinguish them from untreated in a common matrix
-colnames(e_treated_biomarkers_final) <- paste(colnames(e_treated_biomarkers_final),"Treated",sep = "_") 
-
-# create matrix, which contains gene expression of untreated and treated 
-e_treated_untreated_biomarkers_final <- cbind (e_treated_biomarkers_final, e_untreated_biomarkers_final)
-
-# sort matrix according to colnames that treated and untreated gene expression of the same gene are next to each other
-e_treated_untreated_biomarkers_final <- e_treated_untreated_biomarkers_final[,order(colnames(e_treated_untreated_biomarkers_final))]
-
-# create color vector, where untreated samples are green and treated ones are red
-color_boxplot_e_treated_untreated <- sapply(colnames(e_treated_untreated_biomarkers_final), function(x) {
-  ifelse(x %in% grep ("Treated",colnames(e_treated_untreated_biomarkers_final), value = TRUE),"red", "green")})
-
-# draw boxplot, where treated and untreated are right next to each other
-par(mar = c(16, 4, 2, 2))
-boxplot(e_treated_untreated_biomarkers_final, 
-        ylab = "gene expression (log2)", 
-        main = "Boxplot of gene expression of the volcano biomarkers", 
-        ceex = 1.2, 
-        las = 2, 
-        col = color_boxplot_e_treated_untreated)
-```
-Looking at the boxplot, we can say, that the overall gene expression of ATAD2 and MKI67 are slightly higher than the gene expression of the other three genes in the untreated and treated samples. Moreover, in all genes the range of the gene expression levels is higher in the treated samples. This could be expected, as the genes are regulated differently in all of the 59 cell lines. 
-
-### Foldchange- GI50 correlation of final biomarker
-Moreover, we draw once again a **scatter plot** with the foldchange - GI50 correlation, but this time of our final biomarkers. We thereby want to compare if the fold changes for each cell line vary a lot between the five genes or if you can even see some pattern.   
-```{r warning = FALSE}
-# create correlation matrix with 5*59 rows and 4 columns (foldchange, GI50 value, color and biomarker name)
-# vector of fold change, where the 59 fold change values for each of the five biomarkers are combined below each other
-correlation_foldchange <- c(e_foldchange[biomarkers_final [1],],
-                            e_foldchange[biomarkers_final [2],],
-                            e_foldchange[biomarkers_final [3],],
-                            e_foldchange[biomarkers_final [4],],
-                            e_foldchange[biomarkers_final [5],])
-
-# vector of GI50, where the 59 LogGI50 are repeated five times for the five biomarkers
-correlation_GI50 <-rep(LogGI50_59_celllines, 5)
-
-# vector of color, where each color is assigned to the 59 rows of one biomarker
-correlation_color <- c(rep("green", 59), 
-                       rep("yellow", 59),
-                       rep("red", 59),
-                       rep("blue", 59),
-                       rep("black", 59))
-
-# vector of biomarker name, where each biomarker name is assigned to the 59 rows of one biomarker
-correlation_name_biomarker <- c(rep("ATAD2", 59),
-                                rep("E2F8", 59),
-                                rep("ERCC6L", 59),
-                                rep("MIR15A//DLEU2L//DLEU2", 59),
-                                rep("MKI67", 59))
-
-# create matrix of the four vectors 
-correlation_biomarkers <- cbind (correlation_foldchange, 
-                                 correlation_GI50, 
-                                 correlation_color, 
-                                 correlation_name_biomarker)
-rm(correlation_foldchange, correlation_GI50, correlation_name_biomarker)
-
-# create color palette for each of the five biomarkers
-color_palette_biomarkers <- c("green","yellow","red" , "blue", "black" )
-names(color_palette_biomarkers) <- biomarkers_final
-
-# draw scatter plot of foldchanges of the biomarkers aginst LogGI50 
-par(mar = c(4, 6, 2, 13), xpd = "TRUE")
-plot(correlation_biomarkers[ ,"correlation_GI50"],
-     correlation_biomarkers[ ,"correlation_foldchange"],
-     col = correlation_color, 
-     pch = 19,
-     xlab = "logGI50", 
-     ylab = "foldchange of biomarkers",        
-     main = " Correlation between biomarkers and the GI50 values of the different cell lines",
-     cex.main = 1.2)
-
-# add legend to associate each color with one final biomarker
-legend("topright", 
-       legend = names( color_palette_biomarkers),
-       col = color_palette_biomarkers,
-       pch = 19,
-       inset = c(-0.5, 0),
-       xpd = TRUE)
-```
-Looking at the scatter plot, we can see, that the fold changes of the five biomarkers do not vary a lot for less sensitive cell lines. However, for erlotinib sensitive cell lines the foldchanges differ dramatically at some points. Mostly the fold change of the MIR15A gene varies from the other four genes in the sensitive cell lines.
 
 ### Single gene response plot 
 We therfore want to take a closer look at the fold change of the biomarkers in the most sensitive cell lines using a **barplot**. 
