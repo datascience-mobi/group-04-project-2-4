@@ -27,6 +27,7 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(fig.width = 9, fig.height = 6, fig.align = "center")
 ```
 
+<div style = "text-align:justify">
 The project is based on the data generated in the NCI Transcriptional Pharmacodynamics Workbench (TPW) data and is divided into a broad and specific analysis. First of all, a broad analysis (milestone 1) containing all samples of the NCI60 panel with 15 different cancer drugs is performed. In the specific analysis we focus on the drug erlotinib, which is an inhibitor of EGFR. Four milestones are defined to analyse which pathways are mostly regulated due to the drug treatment. The second milestone includes finding the cell lines which have the strongest fold change and the third one to identify biomarkers, defined as the genes, which are most regulated, significant and best correlating with drug sensitivity. In milestone 4 the correlation between the drug sensitivity of the various cell lines (GI50) and the EGR1 expression is analysed. In the last part, the results of the previous milestones are put together to show the key results of our project.
 
 ### Load data
@@ -119,7 +120,7 @@ annotation <- cbind("Drug" = drugs, "Cellline" = cellline)
 rownames(annotation) <- colnames(fold_changes)
 ```
 
-**3. Cancertype**
+**3. Cancertype**  
 In the cellline_annotation each cell line is assigned to one of seven different cancertypes, which is added as a third column in our annotation. 
 ```{r }
 cancertype <- sapply(annotation[, 2], function(x){ 
@@ -399,6 +400,7 @@ It can be seen that the distribution of all of the highly regulated genes varies
 
 ##   _**2. Milestone: Identify most affected cell lines**_
 
+<div style = "text-align:justify">
 The aim of the second milestone is to identify cell lines, which are highly affected by erlotinib treatment using three different methods. Firstly, we select 15 cell lines, which have the highest variance and have therefore the highest changes in regulation between the different genes. Additionally, we perform a PCA to select those cell lines, which differ most from the other cell lines and verify the previously found cell lines. Afterwards, we draw two different heatmaps. The first one contains the genes used in the supplementary material of the NCI TPW paper. For the second heatmap, we use the database PROGENy to get more precise results. With the heatmaps, we select those cell lines, which form a cluster with EGFR pathway downregulation. To sum up, we compare the three different methods using a Venn plot. We thereby select those cell lines, which appear in every of our three methods.
 
 ### Data preparation 
@@ -663,7 +665,7 @@ cellline_groups <- as.data.frame(cutree(tree = as.dendrogram(cellline_clustering
 cellline_clusters <- as.data.frame(cbind(cellline_groups, annotation_cancertype_df))
 colnames(cellline_clusters) <- c("Cellline cluster", "Cancertype cluster")
 
-# Color according to quantiles
+# color according to quantiles
 color_quantiles <- quantile(progeny_heatmap, seq(0, 1, 0.2))
 
 # generate heatmap with colored bars according to clusters
@@ -697,7 +699,7 @@ Another downregulated pathways is the MAP Kinase pathway, which is part of the R
 Moreover, the Phosphatidylinositol-3-Kinase (PI3K), which is part of the AKT signaling cascade, is also EGFR dependent. Akt signalling is associated with cell growth, apoptosis resistance, cell invation and also cell migration.  
 Lastly, the vascular endothelial growth factors (VEGFs) are downregulated. They bind to the VEGF receptor and promote angiogenesis, a key pathway for tumor cells to get access to nutrients and oxygen from the blood. To conclude, all these different pathways, promoting tumor growth and survival are inhibited by the blocking of the epidermal growth factor receptor (EGFR) with erlotinib.(https://www.sigmaaldrich.com/technical-documents/articles/biology/egf-egfr-signaling.html) 
 
-**upregulation of tumor promoting pathways like Hypoxia and JAK.STAT**
+**Upregulation of tumor promoting pathways like Hypoxia and JAK.STAT**
   
    However, Erlotinib treatment also leads to an upregulation of the JAK.STAT and the Hypoxia pathway, which both promote tumor progression, oncogenesis and angiogenese in nearly every cell line. Cell lines in the left cluster, on the other hand, show nearly inverted results. (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5045092/)
 
@@ -741,6 +743,7 @@ With this plot, we reduce our cell lines to a total of 10, which were selected t
 
 ##   _**3. Milestone: Identify biomarkers**_
 
+<div style = "text-align:justify">
 As third milestone, we want to select those genes, which are most regulated by erlotinib. Therefore, we perform an MA plot to illustrate and identify genes with the highest fold change. Thereafter, we further reduce those genes according to their significance using a volcano plot. To illustrate, how many genes are left out due to their lower significance, we draw a venn diagram. Those genes, which have a high fold change and a high significance represent our biomarkers. Selecting the biomarkers, we draw a density plot to compare the gene expression before and after treatment. 
 
 ### Select biomarkers with high foldchange
@@ -875,6 +878,7 @@ To conclude this milestone, we end up with 63 biomarkers, which have an absolute
 
 
 ##   _**4. Milestone - Does the gene expression correlate with the drug sensitivity?**_
+<div style = "text-align:justify">
 In the fourth milestone, we focus on the erlotinib target EGFR and its regulated gene EGR1. The GI50-values of all cell lines, which show, how much the cell growth is inhibited and therefor how sensitive the cell line is towards erlotinib, were compared with the expression of these genes. Thereby, we hope to see a correlation between the untreated gene expression of EGFR and the GI50 values, because the erlotinib receptor EGFR should be more expressed in erlotinib sensitive cells. Thereafter, we correlate the fold change of EGR1 with the GI50-values, since we expect, that the fold change of EGR1 decreases most in erlotinib sensitive cell lines.
 
 ### Data preparation 
@@ -1000,6 +1004,7 @@ This time, the correlation value is much higher with r = 0.606 and apart from a 
 
 ##   _**5. Milestone - final results**_
 
+<div style = "text-align:justify">
 In our last milestone, we further reduce our cell lines of milestone 2 by selecting only the erlotinib sensitive cell lines. Moreover, we further reduce the biomarkers by selecting only the biomarkers, which are most regulated in erlotinib sensitive cell lines. With these final biomarkers and cell lines we draw a boxplot, a foldchange-GI50 correlation plot and one single gene response plot for each biomarker to compare the changes in gene expression after erlotinib treatment and sum up our project. 
 
 ### Select final cell lines according to GI50 correlation
@@ -1287,3 +1292,4 @@ ggarrange( plot[[1]], plot[[2]], plot[[3]], plot[[4]], plot[[5]],
 ```
 
 We sum up our specific analysis with this barplot. It shows the five final biomarkers, which have a high fold change, a high significance and a specific regulation only in erlotinib sensitive cell lines. The seven selected cell lines on the other hand show a high variance, differ most from the other cell lines in the PCA, build a cluster in the heatmap and are most sensitive to erlotinib. Comparing the five barplots, we can see that ERCC6L, ATAD2, E2F8 and MKI67 are mostly regulated in the ovarian cancer cell lines IGR-OV1 and SK-OV-3 and the renal cancer line ACHN. MIR15A, on the other hand, is not regulated a lot in the ovarian cancer lines, but in the renal cell lines ACHN, CAK-1 and the NSCLC cell line NCI-H322M. 
+</div>
