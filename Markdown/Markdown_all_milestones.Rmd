@@ -1084,6 +1084,20 @@ biomarkers_final <- gsub(pattern = ".cor", replacement = "", x = biomarkers_fina
 ```
 With this plot we can compare the 63 biomarkers, which have a high foldchange and a high significance, with the 500 genes with the highest correlation. Thereby, we find 5 final biomarkers, which are represented in both groups. These biomarkers are ERCC6L, ATAD2, E2F8, MKI67 and MIR15A//DLEU2L//DLEU2.
 
+ERCC6L is essential for the accurate segregation of sister chromatids during mitosis and therefore is essential for cytokinesis and cell proliferation. This protein binds to double-stranded DNA and cut the ultra-fine DNA bridges between the sister chromatids if stretching force is exposed by the mitotic spindle. (https://www.genecards.org/cgi-bin/carddisp.pl?gene=DLEU2&keywords=dleu2)
+
+ATAD2 is part of the AAA (ATPases Associated with diverse cellular Activities) family. It performs on the one hand chaperone-like-functions like the assembly and degradation of protein complexes. On the other hand, it is associated with chromatin binding and histone binding. Therefore, it is part of the "Gastric Cancer Network 2" and "Transcriptional regulation by the AP-2 (TFAP2) family of transcription factors" which both include EGFR as a central protein. (https://www.genecards.org/cgi-bin/carddisp.pl?gene=ATAD2)
+
+E2F8 is a transcription factor and plays a role in various processes for example angiogenesis and polyploidization of specialized cells. E2F8 is a transcription repressor and suppresses the expression of E2F1 which is a component in the feedback loop in S phase. When E2F8 is downregulated more E2F1 is transcription and in case of DNA damage p53/TP53-dependent apoptosis is initiated. E2F8 plays a key role in polyploidization of cells, by repressing genes which promote cytokinesis. Furthermore, it activates the transcription of angiogenesis allied genes.
+(https://www.genecards.org/cgi-bin/carddisp.pl?gene=E2F8&keywords=e2f8)
+
+MKI67 is a nuclear protein and is associated with cellular proliferation. MKI67 is therefore used as a proliferation marker in human cells. IT has a high electrical charge and binds to the DNA. The electrical charge prevents the chromosomes from the formation of one giant chromatin mass and therefore enables independent chromosome motility.
+(https://www.genecards.org/cgi-bin/carddisp.pl?gene=MKI67&keywords=mki67)
+
+Mikro RNAs like MKI67 are involved in post-transcriptional regulation of gene expression. Binding of miRNAs affects both the stability and the translation of mRNA and therefore regulates the biosynthesis of proteins. MIR15A is an important tumor suppressor gene cluster and a reduction of MIR15A is related to progression of tumors. Furthermore, it plays a role in many different biological processes like tumor cell proliferation, invasion, chemoresistance and apoptosis. 
+(https://www.genecards.org/cgi-bin/carddisp.pl?gene=MIR15A&keywords=mir15a)
+
+
 ### Compare gene expression of final biomarkers 
 To get a better overview of our five final biomarkers, a **boxplot** of the **fold change** was created. This shows us the median as well as the distribution of the fold changes between the different cell lines. 
 ```{r}
@@ -1198,6 +1212,11 @@ Looking at the scatter plot, we can see, that the fold changes of the five bioma
 
 ### Single gene response plot 
 We therfore want to take a closer look at the fold change of the biomarkers in the most sensitive cell lines using a **barplot**. 
+
+In addition to that we want to compare our results with **Lapatinib**, which is also a tyrosine kinase inhibitor like Erlotinib. Lapatinib is used for the treatment of patients with metastatic breast cancer whose tumors overexpress HER2. Because both drugs target the epidermal growth factor receptor, we suggest that this drug could have the same effect on our found biomarkers. 
+
+First of all we have to prepare and normalize the Lapatinib data like we done it with Erlotinib.
+
 ```{r message = FALSE, warning = FALSE}
 #comparison with lapatinib
 # new matrix only with samples treated with lapatinib  (l = lapatinib)
@@ -1220,7 +1239,44 @@ l_foldchange <- l_treated - l_untreated
 
 lapatinib_ERCC6L <- l_foldchange[biomarkers_final[1], celllines_final]
 
+```
 
+```{r echo = FALSE, fig.show = "hide", message = FALSE, warning = FALSE}
+# create data frame, with one column for the foldchange of each biomarker in the final cell lines
+df_barplot_results <- as.data.frame(sapply (biomarkers_final, function(x) {
+  l_foldchange[x, celllines_final]
+}))
+
+# add one column for the cell line and one for the cancer type of the cell line
+df_barplot_results <- as.data.frame(cbind(cellline = celllines_final, annotation_cancertype_df[celllines_final, ], df_barplot_results))
+colnames(df_barplot_results)[2] <- "Cancertypes" #change colname of cancer type column
+
+# sort cell lines according to cancer type
+df_barplot_results <- df_barplot_results [order(df_barplot_results[,"Cancertypes"]),]
+
+# create barplot for each gene and color according to cancer type
+plot <- lapply(colnames(df_barplot_results)[3:7], function(gene){
+  ggplot_title <- paste("Foldchange of" , gene)
+  ggplot(data = df_barplot_results, aes(x = cellline, y = df_barplot_results[ ,gene], fill = Cancertypes)) +
+    geom_bar(stat = "identity")+
+    scale_fill_manual(values = c("aquamarine", "forestgreen", "chartreuse", 
+                               "cadetblue","purple", 
+                               "firebrick1", "deepskyblue"))+
+    ggtitle(paste0 (ggplot_title, "\n"))+
+    theme(axis.title.x = element_blank())+
+    theme(axis.title.y = element_blank())+
+    scale_x_discrete(limits = rownames(df_barplot_results))+
+    coord_flip()
+})
+
+# load ggpubr
+library(ggpubr)
+# draw all five barplots next to each other
+ggarrange( plot[[1]], plot[[2]], plot[[3]], plot[[4]], plot[[5]], 
+          ncol = 2, nrow = 3, common.legend = TRUE, legend = "top")
+```
+
+```{r message = FALSE, warning = FALSE}
 
 # create data frame, with one column for the foldchange of each biomarker in the final cell lines
 df_barplot_results <- as.data.frame(sapply (biomarkers_final, function(x) {
@@ -1256,40 +1312,10 @@ ggarrange( plot[[2]], plot[[3]], plot[[4]], plot[[5]], plot[[1]], plot[[6]],
           ncol = 2, nrow = 3, common.legend = TRUE, legend = "top")
 ```
 
-```{r}
-# create data frame, with one column for the foldchange of each biomarker in the final cell lines
-df_barplot_results <- as.data.frame(sapply (biomarkers_final, function(x) {
-  l_foldchange[x, celllines_final]
-}))
-
-# add one column for the cell line and one for the cancer type of the cell line
-df_barplot_results <- as.data.frame(cbind(cellline = celllines_final, annotation_cancertype_df[celllines_final, ], df_barplot_results))
-colnames(df_barplot_results)[2] <- "Cancertypes" #change colname of cancer type column
-
-# sort cell lines according to cancer type
-df_barplot_results <- df_barplot_results [order(df_barplot_results[,"Cancertypes"]),]
-
-# create barplot for each gene and color according to cancer type
-plot <- lapply(colnames(df_barplot_results)[3:7], function(gene){
-  ggplot_title <- paste("Foldchange of" , gene)
-  ggplot(data = df_barplot_results, aes(x = cellline, y = df_barplot_results[ ,gene], fill = Cancertypes)) +
-    geom_bar(stat = "identity")+
-    scale_fill_manual(values = c("aquamarine", "forestgreen", "chartreuse", 
-                               "cadetblue","purple", 
-                               "firebrick1", "deepskyblue"))+
-    ggtitle(paste0 (ggplot_title, "\n"))+
-    theme(axis.title.x = element_blank())+
-    theme(axis.title.y = element_blank())+
-    scale_x_discrete(limits = rownames(df_barplot_results))+
-    coord_flip()
-})
-
-# load ggpubr
-library(ggpubr)
-# draw all five barplots next to each other
-ggarrange( plot[[1]], plot[[2]], plot[[3]], plot[[4]], plot[[5]], 
-          ncol = 2, nrow = 3, common.legend = TRUE, legend = "top")
-```
-
 We sum up our specific analysis with this barplot. It shows the five final biomarkers, which have a high fold change, a high significance and a specific regulation only in erlotinib sensitive cell lines. The seven selected cell lines on the other hand show a high variance, differ most from the other cell lines in the PCA, build a cluster in the heatmap and are most sensitive to erlotinib. Comparing the five barplots, we can see that ERCC6L, ATAD2, E2F8 and MKI67 are mostly regulated in the ovarian cancer cell lines IGR-OV1 and SK-OV-3 and the renal cancer line ACHN. MIR15A, on the other hand, is not regulated a lot in the ovarian cancer lines, but in the renal cell lines ACHN, CAK-1 and the NSCLC cell line NCI-H322M. 
+
+When we compare the biomarker ERCC6L after Erlotinb show equal results on the renal cell lines CAKI-1. Beside that ERCC6L is not regulated in the ovarian cell line IGR-OV1 and the NSCL cancer cell line NCI-H332M.  
+
+
+
 </div>
