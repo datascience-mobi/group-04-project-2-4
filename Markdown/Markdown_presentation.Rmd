@@ -27,10 +27,7 @@ knitr::opts_chunk$set(cache = TRUE)
 knitr::opts_chunk$set(fig.width = 9, fig.height = 6, fig.align = "center")
 ```
 
-The project is based on the data generated in the NCI Transcriptional Pharmacodynamics Workbench (TPW) data and is divided into a broad and specific analysis. First of all, a broad analysis (milestone 1) containing all samples of the NCI60 panel with 15 different cancer drugs is performed. In the specific analysis we focus on the drug erlotinib, which is an inhibitor of EGFR. Four milestones are defined to analyse which pathways are mostly regulated due to the drug treatment. The second milestone includes finding the cell lines which have the strongest fold change and the third one to identify biomarkers, defined as the genes, which are most regulated, significant and best correlating with drug sensitivity. In milestone 4 the correlation between the drug sensitivity of the various cell lines (GI50) and the EGR1 expression is analysed. In the last part, the results of the previous milestones are put together to show the key results of our project.
-
 ### Load data
-Firstly, the data generated from the NCI TPW is downloaded and the various tables are saved as data frames. 
 
 ```{r }
 NCI_TPW_gep_treated <- readRDS(url("https://ndownloader.figshare.com/files/14720180?private_link=db1411debcfbe2618d2f"))
@@ -46,12 +43,9 @@ drug_annotation <- read.delim("https://ndownloader.figshare.com/files/14768984?p
 
 ##   _**1. Milestone: Broad analysis**_
 
-The first part of our project is a broad analysis to get an overview of the data generated in the NCI Transcriptional Pharnacodynamics Workbench (TPW). The distribution of the data is analyzed with a density plot, as well as with a boxplot to show, whether the data is already normalized or normalization is needed for further analysis. The data of the TPW contains gene expression values for 819 samples and 13299 genes. For each of the cancer cell lines the normal gene expression, as well as the gene expression after drug treatment with one of 15 drugs was measured. In a principal component analysis it is tested, whether there are clusters of samples corresponding to the same cancertype or samples treated with the same drug by coloring according to these two attributes. In the last step of the overall analysis we search for genes, which were most regulated through the therapeutic cancer treatment.  
 
 ### Data preparation and annotation
 
-After loading the data of the TPW, we need some preparation and annotation of the data to perform our analysis. To show the effect of a drug on the gene expression, the log2 fold change, which is a measurement for the quantitative change due to drug treatment, is used. Since the gene expression values are already logarithmic, the fold change can be calculated by substracting the untreated values (as a control of normal gene expression for each gene in each sample) from the treated ones. 
-  
 #### Calculate fold change due to drug treatment  
 
 ```{r }
@@ -61,7 +55,6 @@ fold_changes <- as.data.frame(fold_changes)
 
     
 #### Renaming of cell line SK-MEL-2 
-One problem, which occured at the first structuring of the data by using the grep() function was that the cell line name SK-MEL-2 is part of cell line SK-MEL_28. To solve this we rename that cell line to SK-MEL-2_.  
 
 ```{r }
 # SK-MEL-2_ is added as new factor 
@@ -74,7 +67,7 @@ cellline_annotation$Cell_Line_Name <- factor(as.character(
 ```
   
 #### Renaming of cancertype Non-Small Cell Lung 
-To make the legend of the following plots smaller and clearer, we abbreviate Non-Small Cell Lung with NSCL.
+
 ```{r}
 # NSCL is added as new factor 
 levels(cellline_annotation$Cancer_type) <- c(levels(cellline_annotation$Cancer_type), 
@@ -86,10 +79,9 @@ cellline_annotation$Cancer_type <- factor(as.character(
 ```
   
 #### Annotation of all sample names  
-A dataframe ("annotation") is created, which contains for each sample name (in 819 rows) the drug, cell line and cancertype. This annotation is later used for labeling and coloring of our plots.     
 
 **1. Drug**   
-For finding the drug a certain sample is treated with, the function grepl is used which shows whether a drug listed in the drug_annotation is contained in the sample name (colnames of fold_changes).
+
 ```{r }
 sample_drug <- as.data.frame(sapply(levels(drug_annotation$Drug), grepl, 
                                     colnames(fold_changes), ignore.case = TRUE))
@@ -102,7 +94,7 @@ drugs <- as.vector(apply(sample_drug, 1, function(x){ # for each row of the samp
 ```
 
 **2. Cell line**  
-The cell line is extracted from the sample name in a similar way as the drug. The two vectors with the drug and cell line of each sample are then combined in one data frame.
+
 ```{r }
 sample_cellline <- as.data.frame(sapply(levels(cellline_annotation$Cell_Line_Name), grepl, 
                                         colnames(fold_changes), ignore.case = TRUE)) 
@@ -120,7 +112,7 @@ rownames(annotation) <- colnames(fold_changes)
 ```
 
 **3. Cancertype**
-In the cellline_annotation each cell line is assigned to one of seven different cancertypes, which is added as a third column in our annotation. 
+
 ```{r }
 cancertype <- sapply(annotation[, 2], function(x){ 
   # 2nd column of annotation contains cell line name of samples
@@ -137,7 +129,6 @@ rm(drugs, sample_drug, cellline, sample_cellline, cancertype)
 ```
 
 #### Preparation for Coloring    
-For coloring according to drug or cancertype a color vector for each of them is created which assigns each drug or each cancertype a color. These color vectors are used for coloring of the plots and creating the corresponding legends. For this purpose we searched for a color palette containing 15 colors, which are easy to distinguish. However, we only found some like RColorBrewer, which had no palette containing at least 15 distinguishable colors. Therefore we just define our own color_palette by using the names of easily distinguishable colors. 
 
 **1. Coloring according to drug (color_vector_all_drugs)**
 ```{r }
@@ -172,7 +163,7 @@ color_vector_cancertype <- sapply(rownames(annotation), function(x){
 ```
 
 ### Distribution of gene expression values for "untreated" and "treated"
-To show the distribution of all gene expression values, a **density plot** is drawn. The black line contains all values measured for control samples (untreated). In red the distribution of the gene expression of all samples treated with 15 drugs is shown.
+
 ```{r }
 plot(density(NCI_TPW_gep_untreated), 
      "Density plot of gene expression", 
@@ -184,11 +175,8 @@ legend("topright",
        pch = 15) # filled square to show color in legend
 ```
 
-As expected, there can be hardly seen any difference between both curves, so the distribution is nearly the same. The main reason for that is that the gene expression of most of the 13299 genes does hardly or not at all change due to the drug. Ideally the drug should only affect genes, which have an impact specifically on cancer cells and allow them to divide endlessly. On the other side, other genes should not be affected to remain a functional cell. Furthermore, an upregulation of some genes and a downregulation of others could compensate each other in the density plot. 
-
 ### Gene expression profile for untreated cell lines
 
-In a next step the gene expression profile of each untreated sample is visualized in a **boxplot** to look, whether the expression profiles look the same over all samples or whether normalization is needed. 
 
 ```{r warning = FALSE }
 # par used to set graphical parameters
@@ -203,8 +191,6 @@ boxplot(NCI_TPW_gep_untreated,
         main = "Gene expression profile of untreated NCI60 cell lines")
 title(xlab = "Samples", line = 1.0) # used to create a xlab nearer to the axis
 ```
-
-In the boxplot differences occuring after a certain number of samples can be observed. An explanation for that could be that the gene expression of the samples was measured at different points of time or even at different laboratories. This raises the question, whether these batches match with the 15 drugs these control measurements of untreated expressions were made. Therefore, the boxes are **colored according to the drug** the control was used for.   
 
 ```{r warning = FALSE}
 par(mar = c(4, 4, 4, 7.5), xpd = "TRUE")
@@ -223,7 +209,6 @@ legend("topright",
        pch = 19) # type of points in legend
 ```
 
-Since the batches exactly match the different drugs for which the untreated expression is used, **normalization** is necessary if the values over the various drugs should be comparable. 
 
 ```{r warning = FALSE}
 # each sample should have mean 0 and sd 1 in the untreated and treated table
@@ -257,7 +242,6 @@ legend("topright",
 ```
 
 ### Principal Component Analysis (PCA) 
-A principal component analysis is used for dimensionality reduction. With these technique it is possible to depict most of the variance observed in the gene expression changes due to drug treatment (foldchange) over all samples. The points are colored firstly according to drug and secondly according to cancertype to see whether there are corresponding clusters. 
 
 #### Coloring according to drug
 ```{r warning = FALSE, fig.height = 10, message = FALSE}
@@ -306,7 +290,6 @@ plot(pca$rotation[,2],
 
 ```
 
-In the PCA plot it can be seen that the cell lines, treated with the same drug, cluster in certain areas. Especially the fold change of the cell lines treated with bortezomib, doxorubicin and vorinostat cluster further apart from the rest. The samples of erlotinib, on which we will focus in the second part are mostly clustered in the middle of the plot. 
 
 #### Coloring according to cancertype
 ```{r warning = FALSE, fig.height = 10}
@@ -350,49 +333,6 @@ mtext("PCA of FC colored according to cancertype",
       outer = TRUE)
 
 ```
-
-The colors showing which cancertype a cell line belongs to seem rather random distributed in the PCA plot. No clustering between the cell lines beeing part of the same cancertype can be observed. This means that the drug changes the gene expression in a similar way in all samples, whereas the cancertype has not that much impact on how the gene expression is changed.
-
-### Most regulated genes 
-In the last part of the broad analysis, we analyse which genes are most regulated over all drug treatments. For that the mean fold change for each gene over all samples is calculated and the 10 genes with the highest mean are shown in a **barplot**. The mean fold change is calculated from the absolute numbers of the fold change, since otherwise positive and negative values would compensate each other and the mean would probably be around zero.  
-```{r}
-# calculating the mean FC over positive FC values
-mean_FC_abs <- apply(abs(fold_changes), 1, mean)
-mean_FC_abs <- sort(mean_FC_abs, decreasing = TRUE)
-mean_FC_abs <- as.data.frame(cbind(Genes = names(mean_FC_abs[1:10]), abs_foldchange = mean_FC_abs[1:10]))
-mean_FC_abs$abs_foldchange <- as.numeric(as.character(mean_FC_abs$abs_foldchange))
-
-# create barplot
-ggplot(data = mean_FC_abs, aes(x = Genes, y = abs_foldchange)) +
-    geom_bar(stat = "identity")+
-    ylab("mean fold change over all samples per gene")+
-    ggtitle("Genes with highest mean in absolute FC")+
-    theme(plot.title = element_text(size = 13, face = "bold", hjust = 0.5))+ # bold and centered title
-    scale_x_discrete(limits = rev(rownames(mean_FC_abs)))+ # sort cell lines by increasing values
-    coord_flip()
-
-```
-The barplot shows that ATF3 has the highest mean fold change, which means that this gene is regulated the most over all cancer treatments. ATF3 (activating transcription factor 3) is an adaptive response gene, which means that it regulates the adaption to extra- or intracellular changes. Furthermore, ATF3 regulates the cell cycle and apoptosis, so it plays a crucial role in cancer progression (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2783469/).
-  Other genes like CXCL8, which is part of the CXC chemokine family and a mediator of the inflammatory response (https://www.genecards.org/cgi-bin/carddisp.pl?gene=CXCL8), GDF15 (growth differentiation factor 15, https://www.genecards.org/cgi-bin/carddisp.pl?gene=GDF15) or DDIT3 (DNA damage inducible transcript 3, https://www.genecards.org/cgi-bin/carddisp.pl?gene=DDIT3), are also associated with cancer and should change the expression due to drug treatment. EGR1 (early growth response 1) is a transcription factor and is upregulated by mutant EGFR (https://www.ncbi.nlm.nih.gov/pubmed/19414352), which is the target of the drug erlotinib we focused on our specific analysis.
-
-To visualize the distribution of the fold change of these highly regulated genes a **boxplot** over all samples is created.
-```{r}
-# FC_samples_with_highest_mean_FC contains the gene expression of the 20 biomarkers (20 columns) of all samples(819 rows) 
-FC_samples_with_highest_mean_FC <- data.matrix(as.data.frame(sapply(rownames(mean_FC_abs), function(x){
-  fold_changes[which(x == rownames(fold_changes)),]
-})))
-
-# boxplot showing the distribution of all values measured for the most regulated genes
-par(mar = c(8, 2, 2, 2))
-boxplot(FC_samples_with_highest_mean_FC, 
-      ylab = "foldchange", 
-      main = "Boxplot of foldchange of the genes with highest mean FC", 
-      cex.main = 1.2,
-      las = 2,
-      outline = FALSE) 
-```
-
-It can be seen that the distribution of all of the highly regulated genes varies a lot over the different samples. All of these highly regulated genes are upregulated in some samples, while they are downregulated in others. Since, most of these genes play a role in pathways related with cancer, we would have expected that they are regulated in the same direction in the various cancercells by the various drugs, which is not the case. Nevertheless, more than 75% of the samples per gene have a positive fold change and only a few samples are regulated in the other direction.
 
 
 # **Specific analysis: Erlotinib **
@@ -752,11 +692,9 @@ pheatmap(t(progeny_heatmap),
 
 ##   _**3. Milestone: Identify biomarkers**_
 
-As third milestone, we want to select those genes, which are most regulated by erlotinib. Therefore, we perform an MA plot to illustrate and identify genes with the highest fold change. Thereafter, we further reduce those genes according to their significance using a volcano plot. To illustrate, how many genes are left out due to their lower significance, we draw a venn diagram. Those genes, which have a high fold change and a high significance represent our biomarkers. Selecting the biomarkers, we draw a density plot to compare the gene expression before and after treatment. 
+### Select biomarkers with high fold change and high significance
 
-### Select biomarkers with high foldchange
-Firstly, we draw an **MA plot** to compare the fold change to the average log2 expression of all genes. Thereby, we select only those genes, which have a mean fold change higher than 0.25 or a mean fold change lower than -0.25.
-```{r message = FALSE, warning=FALSE}
+```{r message = FALSE, warning=FALSE,fig.show="hide", echo = FALSE}
 # load ggplot2 and ggrepel
 library(ggplot2)
 library(ggrepel)
@@ -789,14 +727,15 @@ ggplot(data = MA)+
 biomarkers_MA <- rownames(MA)[which(abs(MA$M) > 0.25)]
 ```
 
-### Select biomarkers with high fold change and high significance
-We then create a **volcano plot** to find the genes, which have in addition to a high fold change, also a very high significance. With a paired two-sample t-test between the untreated and treated gene expression values a p-value was calculated for each gene. These p-values were then corrected with the Benjamini-Hochberg procedure to get the so-called FDR-values, which are used as a measurement for the significance of a fold change.
-```{r warning = FALSE, message = FALSE}
+ **volcano plot** 
+```{r warning = FALSE, message = FALSE, echo = FALSE}
 # load libraries needed for EnhancedVolcano
 library(ggplot2)
 library(ggrepel)
 library(EnhancedVolcano)
-
+```
+ 
+```{r warning = FALSE, message = FALSE}
 # calculate mean foldchange over all cell lines for each gene
 e_foldchange_mean_over_cell_lines <- rowMeans(e_foldchange) 
 
@@ -808,6 +747,9 @@ p_values <- sapply(rownames(e_treated), function(x) {
 # calculate FDR with benjamini-hochberg (BH)
 # selecting significance of genes with p-value, would give us more false-positives, because most of the genes are not regulated by erlotinib
 FDR_values <- p.adjust(p_values, method = "BH", n = length(p_values)) 
+```
+
+```{r warning = FALSE, message = FALSE, echo = FALSE}
 
 # create matrix with one column for mean foldchange and one column for FDR_values for every gene
 volcano_plot_mat <- cbind(e_foldchange_mean_over_cell_lines, FDR_values)
@@ -831,30 +773,6 @@ EnhancedVolcano(volcano_plot_mat,
 # save highlighted biomarkers, obtained through volcano plot in biomarkers_volcano
 biomarkers_volcano <- rownames(volcano_plot_mat)[which(abs(volcano_plot_mat[ , 1]) >  0.25  
                                                        & volcano_plot_mat[ , 2] < 10e-9)]
-```
-
-
-### Compare selected biomarkers 
-We use a **Venn Diagram** to compare the most regulated genes obtained through the MA plot with those obtained through the volcano plot. This shows us, how many genes were sorted out due to a lower FDR_value.
-```{r warning = FALSE, message = FALSE}
-# draw Venn Diagram with biomarkers of MA and Volcano plot
-par(oma = c(2, 2, 2, 2))
-venn.plot <- venn.diagram(
-  x = list(
-    "Volcano Plot" = biomarkers_volcano,
-    "MA Plot" = biomarkers_MA),
-  filename = NULL, 
-  fill = c("blue", "red"), 
-  main = "Venn Diagramm of selected biomarkers", 
-  main.fontface = 2,
-  main.cex = 1.2,
-  main.fontfamily = "sans", # font type of title is Arial 
-  cat.fontfamily = "sans",
-  cat.cex = 0.9,
-  fontfamily = "sans",
-  ext.text = FALSE,
-  cat.just = list(c(-0.8,2), c(1,0)));
-grid.draw(venn.plot);
 ```
 
 
@@ -1002,8 +920,7 @@ biomarkers_final <- gsub(pattern = ".cor", replacement = "", x = biomarkers_fina
 
 
 ### Single gene response plot 
-We therfore want to take a closer look at the fold change of the biomarkers in the most sensitive cell lines using a **barplot**. 
-```{r message = FALSE, warning = FALSE}
+```{r message = FALSE, warning = FALSE, echo = FALSE}
 #comparison with lapatinib
 # new matrix only with samples treated with lapatinib  (l = lapatinib)
 l_treated <- NCI_TPW_gep_treated[ ,grep ("lapatinib", colnames(NCI_TPW_gep_treated))]
@@ -1026,7 +943,6 @@ l_foldchange <- l_treated - l_untreated
 lapatinib_ERCC6L <- l_foldchange[biomarkers_final[1], celllines_final]
 
 
-
 # create data frame, with one column for the foldchange of each biomarker in the final cell lines
 df_barplot_results <- as.data.frame(sapply (biomarkers_final, function(x) {
   e_foldchange[x, celllines_final]
@@ -1038,6 +954,11 @@ colnames(df_barplot_results)[2] <- "Cancertypes" #change colname of cancer type 
 
 # sort cell lines according to cancer type
 df_barplot_results <- df_barplot_results [order(df_barplot_results[,"Cancertypes"]),]
+
+
+```
+
+```{r message = FALSE, warning = FALSE}
 
 # create barplot for each gene and color according to cancer type
 plot <- lapply(colnames(df_barplot_results)[3:8], function(gene){
@@ -1054,12 +975,15 @@ plot <- lapply(colnames(df_barplot_results)[3:8], function(gene){
     coord_flip()
 })
 
+```
+
+```{r message = FALSE, warning = FALSE, echo= FALSE}
+
 # load ggpubr
 library(ggpubr)
 # draw all five barplots next to each other
 ggarrange( plot[[2]], plot[[3]], plot[[4]], plot[[5]], plot[[1]], plot[[6]],
           ncol = 2, nrow = 3, common.legend = TRUE, legend = "top")
 ```
-
 
 
