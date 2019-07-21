@@ -1252,7 +1252,7 @@ plot <- lapply(colnames(df_barplot_results)[3:8], function(gene){
 # load ggpubr
 library(ggpubr)
 # draw all five barplots next to each other
-ggarrange( plot[[1]], plot[[2]], plot[[3]], plot[[4]], plot[[5]], plot[[6]],
+ggarrange( plot[[2]], plot[[3]], plot[[4]], plot[[5]], plot[[1]], plot[[6]],
           ncol = 2, nrow = 3, common.legend = TRUE, legend = "top")
 ```
 

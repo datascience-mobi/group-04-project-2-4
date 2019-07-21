@@ -857,33 +857,6 @@ venn.plot <- venn.diagram(
 grid.draw(venn.plot);
 ```
 
-### Compare distribution of gene expression of biomarkers before and after treatment  
-To sum up the milestone, we draw a **density plot** only with the biomarkers identified in the volcano plot. One line is drawn to show the distribution of all untreated values (in green) and another one to show the distribution of the treated ones (in red) to show how the overall gene expression of the biomarkers changed due to erlotinib treatment. To visualize the differences in the distribution, we have to separate between up- and downregulated biomarkers to make sure that positive and negative fold changes do not cancel each other out.
-```{r}
-# create new vector, where only up- or downregulated volcano biomarkers are included
-biomarkers_volcano_up <- rownames(volcano_plot_mat)[which(volcano_plot_mat[ , 1] > 0.25)]
-biomarkers_volcano_down <- rownames(volcano_plot_mat)[which(volcano_plot_mat[ , 1] < -0.25)]
-
-# density plot with upregulated biomarkers_volcano to compare untreated with treated gene expression
-plot(density(e_untreated[biomarkers_volcano_up, ]), 
-     "Density plot of gene expression of upregulated biomarkers", 
-     cex = 1.2, 
-     col = "green", 
-     ylim = c(0.0, 0.5))
-lines(density(e_treated[biomarkers_volcano_up, ]), col = "red")
-legend("topright", legend = c("untreated", "treated"), col = c("green", "red"), pch = 15)
-
-# density plot with downregulated biomarkers_volcano to compare untreated with treated gene expression
-plot(density(e_untreated[biomarkers_volcano_down, ]), 
-     "Density plot of gene expression of downregulated biomarkers", 
-     cex = 1.2, 
-     col = "green", 
-     ylim = c(0.0, 0.7))
-lines(density(e_treated[biomarkers_volcano_down, ]), col = "red")
-legend("topright", legend = c("untreated", "treated"), col = c("green", "red"), pch = 15)
-```
-To conclude this milestone, we end up with 63 biomarkers, which have an absolute fold change greater than 0.25 and a FDR-value greater than 10e^-9. The density plots created of the biomarkers show a considerable difference between the untreated and treated gene expression, since all the rarely regulated genes are left out. 
-
 
 ##   _**4. Milestone - Does the gene expression correlate with the drug sensitivity?**_
 
@@ -1084,45 +1057,9 @@ plot <- lapply(colnames(df_barplot_results)[3:8], function(gene){
 # load ggpubr
 library(ggpubr)
 # draw all five barplots next to each other
-ggarrange( plot[[1]], plot[[2]], plot[[3]], plot[[4]], plot[[5]], plot[[6]],
+ggarrange( plot[[2]], plot[[3]], plot[[4]], plot[[5]], plot[[1]], plot[[6]],
           ncol = 2, nrow = 3, common.legend = TRUE, legend = "top")
 ```
 
 
-Complete plot for **Lapatinib** with all biomarkers: 
-```{r}
-# create data frame, with one column for the foldchange of each biomarker in the final cell lines
-df_barplot_results <- as.data.frame(sapply (biomarkers_final, function(x) {
-  l_foldchange[x, celllines_final]
-}))
 
-# add one column for the cell line and one for the cancer type of the cell line
-df_barplot_results <- as.data.frame(cbind(cellline = celllines_final, annotation_cancertype_df[celllines_final, ], df_barplot_results))
-colnames(df_barplot_results)[2] <- "Cancertypes" #change colname of cancer type column
-
-# sort cell lines according to cancer type
-df_barplot_results <- df_barplot_results [order(df_barplot_results[,"Cancertypes"]),]
-
-# create barplot for each gene and color according to cancer type
-plot <- lapply(colnames(df_barplot_results)[3:7], function(gene){
-  ggplot_title <- paste("Foldchange of" , gene)
-  ggplot(data = df_barplot_results, aes(x = cellline, y = df_barplot_results[ ,gene], fill = Cancertypes)) +
-    geom_bar(stat = "identity")+
-    scale_fill_manual(values = c("aquamarine", "forestgreen", "chartreuse", 
-                               "cadetblue","purple", 
-                               "firebrick1", "deepskyblue"))+
-    ggtitle(paste0 (ggplot_title, "\n"))+
-    theme(axis.title.x = element_blank())+
-    theme(axis.title.y = element_blank())+
-    scale_x_discrete(limits = rownames(df_barplot_results))+
-    coord_flip()
-})
-
-# load ggpubr
-library(ggpubr)
-# draw all five barplots next to each other
-ggarrange( plot[[1]], plot[[2]], plot[[3]], plot[[4]], plot[[5]], 
-          ncol = 2, nrow = 3, common.legend = TRUE, legend = "top")
-```
-
-We sum up our specific analysis with this barplot. It shows the five final biomarkers, which have a high fold change, a high significance and a specific regulation only in erlotinib sensitive cell lines. The seven selected cell lines on the other hand show a high variance, differ most from the other cell lines in the PCA, build a cluster in the heatmap and are most sensitive to erlotinib. Comparing the five barplots, we can see that ERCC6L, ATAD2, E2F8 and MKI67 are mostly regulated in the ovarian cancer cell lines IGR-OV1 and SK-OV-3 and the renal cancer line ACHN. MIR15A, on the other hand, is not regulated a lot in the ovarian cancer lines, but in the renal cell lines ACHN, CAK-1 and the NSCLC cell line NCI-H322M. 
