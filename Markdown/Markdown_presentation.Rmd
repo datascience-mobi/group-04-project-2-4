@@ -778,8 +778,7 @@ biomarkers_volcano <- rownames(volcano_plot_mat)[which(abs(volcano_plot_mat[ , 1
 
 ##   _**4. Milestone - Does the gene expression correlate with the drug sensitivity?**_
 
-### Data preparation 
-```{r}
+```{r, echo = FALSE}
 # create vector of NegLogGI50 of erlotinib, which only includes cell lines, which also appear in e_foldchange
 NegLogGI50_59_celllines <- NegLogGI50 ["erlotinib", -c(8,29)] # remove cell line "COLO-205" and "MDA-N"
 
@@ -795,47 +794,58 @@ e_color_cancertype <- color_vector_cancertype[grep("erlotinib", names(color_vect
 ```
 
 
-### EGFR gene expression in the untreated cell lines against GI50-values   
+### EGR1 fold change against GI50-values 
 
-```{r pressure, warning = FALSE}
-# draw scatter plot of  untreated gene expression level of EGFR aginst LogGI50 and color them according to the cancer type
-par(mar = c(4, 4, 4, 7), xpd = "TRUE")
-plot(LogGI50_59_celllines, e_untreated ["EGFR",], 
-      col = e_color_cancertype, 
-      pch = 19, 
+
+```{r figEGR1 , fig.show = "hold",  fig.width = 7, fig.height = 7, warning = FALSE,  message = FALSE, echo = FALSE}
+
+# draw scatter plot of fold change of EGR1 against LogGI50 and color them according to the cancer type
+par(mar = c(4, 4, 4, 10), xpd = "TRUE")
+plot(LogGI50_59_celllines, e_foldchange ["EGR1",], 
+     col = e_color_cancertype, 
+     pch = 19, 
      xlab = "logGI50", 
-     ylab = "EGFR Expression (untreated)",        
-     main = "Expression of the epidermal growth factor receptor (Her 1)",
-     cex.main = 1.2)
-
-# add linear regression line
-# set clipping limit that abline is not longer than the plot itself 
-clip(-7.13, -3.88, -1, 2) 
-abline(lm (e_untreated["EGFR", ]~ LogGI50_59_celllines))
+     ylab = "Fold change of EGR1 Expression",        
+     main = "Erlotinib 24h", 
+     cex.main = 1.2, 
+     col.main = "deepskyblue")
 
 # add legend to associate each color with a cancertype
+segments(-7.11, 0, -3.88)
 legend("topright", 
-    legend = names(color_palette_cancertype), 
-    col = color_palette_cancertype, 
-    pch = 19,
-    inset = c(-0.18, 0),
-    xpd = TRUE)
+       legend = names(color_palette_cancertype), 
+       col = color_palette_cancertype, 
+       inset = c(-0.3, 0),
+       pch = 19)
 
-# label cell lines, which are most sensitive and have a high e_untreated expression of EGFR 
-labeled_celllines_EGFR <- names(LogGI50_59_celllines)[LogGI50_59_celllines < - 5.5
-                                                        & e_untreated ["EGFR", ] > 0]
-text(LogGI50_59_celllines[labeled_celllines_EGFR], e_untreated ["EGFR", labeled_celllines_EGFR], 
-     labels = labeled_celllines_EGFR,
+
+# label cell lines, which are most sensitive and have a very low fold change of EGR1 
+labeled_celllines <- names(LogGI50_59_celllines)[LogGI50_59_celllines < - 6
+                                                        & e_foldchange["EGR1", ] < 0 
+                                                 | LogGI50_59_celllines < -5 
+                                                        & e_foldchange["EGR1", ] < -3]
+text(LogGI50_59_celllines[labeled_celllines], e_foldchange ["EGR1", labeled_celllines],
+     labels = labeled_celllines,
      cex = 0.7,
-     pos = 3)
+     pos = 4)
 
-# perform Pearson correlation, to see how well LogGI50 and the foldchange correlate with each other 
-cor_EGFR <- cor.test(LogGI50_59_celllines, e_foldchange["EGFR",], method = "pearson")
-cor_EGFR_estimate <- round(cor_EGFR$estimate, digits = 3)
+# add linear regression line and set clipping limit
+clip(-7.13, -3.88, -2, 0.5)  
+abline(lm (e_foldchange["EGR1", ]~ LogGI50_59_celllines))
+
+# perform Pearson correlation, to see how well LogGI50 and the fold change correlate with each other 
+cor_EGR1 <- cor.test(LogGI50_59_celllines, e_foldchange["EGR1",], method = "pearson")
+cor_EGR1_estimate <- round(cor_EGR1$estimate, digits = 3)
 
 # add title to scatter plot, which includes the correlation value
-cor_text <- paste("r = ", cor_EGFR_estimate)
-mtext(side = 1, line = -1.2, text = cor_text, adj = c(0.01))
+cor_text <- paste("r = ", cor_EGR1_estimate, "(***)")
+mtext(side = 3, line = -1.2, text = cor_text, adj = c(0.01))
+
+```
+
+```{r}
+# perform Pearson correlation, to see how well LogGI50 and the fold change correlate with each other 
+cor_EGR1 <- cor.test(LogGI50_59_celllines, e_foldchange["EGR1",], method = "pearson")
 ```
 
 
@@ -843,14 +853,10 @@ mtext(side = 1, line = -1.2, text = cor_text, adj = c(0.01))
 
 ### Select final cell lines according to GI50 correlation
 
- **Venn Diagram**. 
-
-```{r message = FALSE}
+```{r message = FALSE, echo = FALSE}
 library(VennDiagram)
-
 # save the names of the 10 most erlotinib-sensitive cell lines (highest LogGI50)
 LogGI50_top10 <- names(sort(LogGI50_59_celllines)[1:10])
-
 # Venn diagram to compare cell lines from Milestone 2 with the ones with highest sensitivity
 venn.plot <- venn.diagram(
   x = list(
@@ -874,10 +880,28 @@ celllines_final <- intersect(celllines_overlap, LogGI50_top10)
 
 ```
 
+```{r}
+#save the 7 cell lines from the intersection
+celllines_final <- intersect(celllines_overlap, LogGI50_top10)
+```
 
 ### Select final biomarkers according to GI50 correlation
 
 ```{r}
+# create vector, which contains the GI50 - fold change correlation value for all genes
+cor_all_genes <- sapply(rownames(e_foldchange), function(x){
+  cor_test_one_gene <- cor.test(LogGI50_59_celllines, e_foldchange[x,], method = "pearson")
+  cor_test_one_gene$estimate
+})
+```
+
+```{r}
+# sort genes according to decreasing correlation value and select 500 genes with the highest correlation value
+cor_all_genes_sorted <- sort(abs(cor_all_genes), decreasing = TRUE)
+cor_top_500_genes <- cor_all_genes_sorted[1:500]
+```
+
+```{r, echo = FALSE}
 # create vector, which contains the GI50 - fold change correlation value for all genes
 cor_all_genes <- sapply(rownames(e_foldchange), function(x){
   cor_test_one_gene <- cor.test(LogGI50_59_celllines, e_foldchange[x,], method = "pearson")
@@ -918,6 +942,38 @@ biomarkers_final <- intersect(names(cor_top_500_genes), names(cor_biomarkers))
 biomarkers_final <- gsub(pattern = ".cor", replacement = "", x = biomarkers_final)
 ```
 
+### Compare gene expression of final biomarkers 
+```{r, echo = FALSE}
+# create matrix only with gene expression of untreated and treated final biomarkers
+e_untreated_biomarkers_final <- sapply(biomarkers_final, function(x){
+  e_untreated[x, ]
+}) 
+e_treated_biomarkers_final <- sapply(biomarkers_final, function(x){
+  e_treated[x, ]
+})
+
+# add "treated" to colnames of gene expression of treated biomarkers to distinguish them from untreated in a common matrix
+colnames(e_treated_biomarkers_final) <- paste(colnames(e_treated_biomarkers_final),"Treated",sep = "_") 
+
+# create matrix, which contains gene expression of untreated and treated 
+e_treated_untreated_biomarkers_final <- cbind (e_treated_biomarkers_final, e_untreated_biomarkers_final)
+
+# sort matrix according to colnames that treated and untreated gene expression of the same gene are next to each other
+e_treated_untreated_biomarkers_final <- e_treated_untreated_biomarkers_final[,order(colnames(e_treated_untreated_biomarkers_final))]
+
+# create color vector, where untreated samples are green and treated ones are red
+color_boxplot_e_treated_untreated <- sapply(colnames(e_treated_untreated_biomarkers_final), function(x) {
+  ifelse(x %in% grep ("Treated",colnames(e_treated_untreated_biomarkers_final), value = TRUE),"red", "green")})
+
+# draw boxplot, where treated and untreated are right next to each other
+par(mar = c(16, 4, 2, 2))
+boxplot(e_treated_untreated_biomarkers_final, 
+        ylab = "gene expression (log2)", 
+        main = "Boxplot of gene expression of the volcano biomarkers", 
+        ceex = 1.2, 
+        las = 2, 
+        col = color_boxplot_e_treated_untreated)
+```
 
 ### Single gene response plot 
 ```{r message = FALSE, warning = FALSE, echo = FALSE}
