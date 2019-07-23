@@ -27,9 +27,8 @@ knitr::opts_chunk$set(cache = TRUE)
 knitr::opts_chunk$set(fig.width = 9, fig.height = 6, fig.align = "center")
 ```
 
-### Load data
 
-```{r }
+```{r include = FALSE}
 NCI_TPW_gep_treated <- readRDS(url("https://ndownloader.figshare.com/files/14720180?private_link=db1411debcfbe2618d2f"))
 NCI_TPW_gep_untreated <- readRDS(url("https://ndownloader.figshare.com/files/14720183?private_link=db1411debcfbe2618d2f"))
 NCI_TPW_metadata <- read.delim("https://ndownloader.figshare.com/files/14720186?private_link=db1411debcfbe2618d2f")
@@ -44,19 +43,15 @@ drug_annotation <- read.delim("https://ndownloader.figshare.com/files/14768984?p
 ##   _**1. Milestone: Broad analysis**_
 
 
-### Data preparation and annotation
 
-#### Calculate fold change due to drug treatment  
-
-```{r }
+```{r include = FALSE}
 fold_changes <- NCI_TPW_gep_treated - NCI_TPW_gep_untreated
 fold_changes <- as.data.frame(fold_changes)
 ```
 
-    
-#### Renaming of cell line SK-MEL-2 
+ 
 
-```{r }
+```{r include = FALSE}
 # SK-MEL-2_ is added as new factor 
 levels(cellline_annotation$Cell_Line_Name) <- c(levels(cellline_annotation$Cell_Line_Name), 
                                                 "SK-MEL-2_")
@@ -66,9 +61,8 @@ cellline_annotation$Cell_Line_Name <- factor(as.character(
   cellline_annotation$Cell_Line_Name))
 ```
   
-#### Renaming of cancertype Non-Small Cell Lung 
 
-```{r}
+```{r include = FALSE}
 # NSCL is added as new factor 
 levels(cellline_annotation$Cancer_type) <- c(levels(cellline_annotation$Cancer_type), 
                                                 "NSCL")
@@ -78,11 +72,9 @@ cellline_annotation$Cancer_type <- factor(as.character(
   cellline_annotation$Cancer_type))
 ```
   
-#### Annotation of all sample names  
+  
 
-**1. Drug**   
-
-```{r }
+```{r include = FALSE}
 sample_drug <- as.data.frame(sapply(levels(drug_annotation$Drug), grepl, 
                                     colnames(fold_changes), ignore.case = TRUE))
   # creates table with TRUE and FALSE for each sample (819 rows) and drug (15 columns)
@@ -93,9 +85,9 @@ drugs <- as.vector(apply(sample_drug, 1, function(x){ # for each row of the samp
 }))
 ```
 
-**2. Cell line**  
+  
 
-```{r }
+```{r include = FALSE}
 sample_cellline <- as.data.frame(sapply(levels(cellline_annotation$Cell_Line_Name), grepl, 
                                         colnames(fold_changes), ignore.case = TRUE)) 
   # creates table with TRUE and FALSE for each sample (819 rows) and cell line (61 columns)
@@ -111,9 +103,9 @@ annotation <- cbind("Drug" = drugs, "Cellline" = cellline)
 rownames(annotation) <- colnames(fold_changes)
 ```
 
-**3. Cancertype**
 
-```{r }
+
+```{r include = FALSE}
 cancertype <- sapply(annotation[, 2], function(x){ 
   # 2nd column of annotation contains cell line name of samples
   # save the cancertype the cell line belongs to 
@@ -128,10 +120,8 @@ annotation <- cbind(annotation, "Cancertype" = cancertype)
 rm(drugs, sample_drug, cellline, sample_cellline, cancertype)
 ```
 
-#### Preparation for Coloring    
 
-**1. Coloring according to drug (color_vector_all_drugs)**
-```{r }
+```{r include = FALSE}
 # define a color palette with 15 chosen colors
 color_palette_drug <- c("aquamarine", "brown", "forestgreen", "slategrey", 
                         "chartreuse", "darkgoldenrod1", "cadetblue","purple", 
@@ -146,8 +136,8 @@ color_vector_drug <- sapply(rownames(annotation), function(x){ # for all samples
 })
 ```
 
-**2. Coloring according to cancertype (color_vector_cancertype)**
-```{r }
+
+```{r include = FALSE}
 # define a color palette with 9 chosen colors
 color_palette_cancertype <- c("aquamarine", "brown", "forestgreen", "chartreuse", 
                               "darkgoldenrod1", "cadetblue","purple", 
@@ -162,9 +152,8 @@ color_vector_cancertype <- sapply(rownames(annotation), function(x){
 })
 ```
 
-### Distribution of gene expression values for "untreated" and "treated"
 
-```{r }
+```{r include = FALSE}
 plot(density(NCI_TPW_gep_untreated), 
      "Density plot of gene expression", 
      cex.main = 1.2) # sets size of main
@@ -175,10 +164,9 @@ legend("topright",
        pch = 15) # filled square to show color in legend
 ```
 
-### Gene expression profile for untreated cell lines
 
 
-```{r warning = FALSE }
+```{r warning = FALSE, include = FALSE }
 # par used to set graphical parameters
 # mar gives the margin size
 # xpd = "TRUE" to plot legend outside of the plot
@@ -192,7 +180,8 @@ boxplot(NCI_TPW_gep_untreated,
 title(xlab = "Samples", line = 1.0) # used to create a xlab nearer to the axis
 ```
 
-```{r warning = FALSE}
+### Boxplot
+```{r warning = FALSE, echo = FALSE}
 par(mar = c(4, 4, 4, 7.5), xpd = "TRUE")
 boxplot(NCI_TPW_gep_untreated, 
         xaxt = "n", # removes labels on x-axis
@@ -210,7 +199,7 @@ legend("topright",
 ```
 
 
-```{r warning = FALSE}
+```{r warning = FALSE, include = FALSE}
 # each sample should have mean 0 and sd 1 in the untreated and treated table
 # this is achieve by substracting the mean and dividing through the standard deviation of the sample
 untreated_normalized <- apply(NCI_TPW_gep_untreated, 2, function(x){ 
@@ -241,10 +230,9 @@ legend("topright",
        inset = c(-0.22, 0)) # moves legend to the right
 ```
 
-### Principal Component Analysis (PCA) 
+### Principal Component Analysis (PCA)
 
-#### Coloring according to drug
-```{r warning = FALSE, fig.height = 10, message = FALSE}
+```{r warning = FALSE, message = FALSE, echo = FALSE}
 library(factoextra)
 
 # prcomp calculates principal components
@@ -252,7 +240,7 @@ pca <- prcomp(FC_normalized)
 
 # set graphical parameters
 # mfrow: combine multiple plots, here 2 rows and 1 column
-par(mar = c(4, 4, 4, 7.5), mfrow = c(2, 1))
+par(mar = c(4, 4, 4, 7.5))# mfrow = c(2, 1))
 
 # PC1 and PC2
 plot(pca$rotation[,1], 
@@ -270,7 +258,7 @@ legend("topright",
        col = color_palette_drug, 
        pch = 19, 
        xpd = "TRUE",
-       inset = c(-0.22, 0.7)) #move legend to the right and down
+       inset = c(-0-22, 0)) #move legend to the right and down
 
 # Title for both plots together: mtext = margin text, side = 3 (upside)
 mtext("PCA of FC colored according to drug", 
@@ -280,19 +268,10 @@ mtext("PCA of FC colored according to drug",
       font = 2, # bold
       outer = TRUE)
 
-# PC2 and PC3
-plot(pca$rotation[,2], 
-     pca$rotation[,3], 
-     col = color_vector_drug, 
-     pch = 19, 
-     xlab = paste("PC2 (", round(get_eigenvalue(pca)[2,2], 1), "%)"), 
-     ylab = paste("PC3 (", round(get_eigenvalue(pca)[3,2], 1), "%)"))
-
 ```
 
 
-#### Coloring according to cancertype
-```{r warning = FALSE, fig.height = 10}
+```{r warning = FALSE, fig.height = 10, include = FALSE}
 # set graphical parameters
 # mfrow: combine multiple plots, here 2 rows and 1 column
 par(mar = c(4, 4, 4, 7), mfrow = c(2, 1))
@@ -350,9 +329,7 @@ e_treated <- scale(e_treated, scale = TRUE)
 e_untreated <- scale(e_untreated, scale = TRUE)
 ```
 
-
-**Colnames annotation** 
-```{r echo = FALSE}
+```{r include = FALSE}
 # echo: code not shown, but output
 # load library formattable to create a table
 library(formattable)
@@ -361,7 +338,7 @@ formattable(as.data.frame(annotation[annotation[,1] == "erlotinib", ])) [1:10, ]
 ```
 
 
-```{r }
+```{r include = FALSE}
 #change colnames according to their cell line instead of their complete sample name
 cellline <- sapply(colnames(e_treated), function(x){
   annotation[x,"Cellline"]
@@ -645,6 +622,40 @@ grid.draw(venn.plot);
 celllines_overlap <- calculate.overlap(venn.list)[[1]] 
 ```
 
+### PCA 
+```{r message = FALSE, warning = FALSE, echo = FALSE}
+# draw PCA, where each point represents a cell line and is colored according to cancer type
+pca <- prcomp(e_foldchange)
+par(mar = c(4, 4, 4, 7))
+plot(pca$rotation[,1], 
+     pca$rotation[,2], 
+     col = color_vector_cancertype, 
+     pch = 19, 
+     main = "PCA of cell lines",
+     cex.main = 1.2,
+     # get_eigenvalue is used to add percentage of explained variance in xlab and ylab
+     # 2nd column of get_eigenvalue contains percentage of explained variance
+     # round(x, digits to round): here round explained variance to one digit
+     xlab = paste("PC1 (", round(get_eigenvalue(pca)[1, 2], 1), "%)"), 
+     ylab = paste("PC2 (", round(get_eigenvalue(pca)[2, 2], 1), "%)"))
+
+# add legend to associate each color with a cancertype
+legend("topright", 
+       legend = names(color_palette_cancertype), 
+       col = color_palette_cancertype, 
+       pch = 19, 
+       xpd = TRUE, 
+       inset = c(-0.18, 0))
+
+# label cell lines, whose PC1 rotation value is greater than 0.14, representing the most divergent cell lines
+celllines_PCA <- names(pca$rotation[ , 1])[pca$rotation[ , 1] > 0.14]
+text(pca$rotation[ , 1][celllines_PCA], 
+     pca$rotation[ , 2][celllines_PCA], 
+     celllines_PCA,
+     pos = 2,
+     cex = 0.6)
+```
+
 ### PROGENy
 
 ```{r warning = FALSE}
@@ -727,17 +738,18 @@ ggplot(data = MA)+
 biomarkers_MA <- rownames(MA)[which(abs(MA$M) > 0.25)]
 ```
 
- **volcano plot** 
+ 
 ```{r warning = FALSE, message = FALSE, echo = FALSE}
 # load libraries needed for EnhancedVolcano
 library(ggplot2)
 library(ggrepel)
 library(EnhancedVolcano)
+
+# calculate mean foldchange over all cell lines for each gene
+e_foldchange_mean_over_cell_lines <- rowMeans(e_foldchange) 
 ```
  
 ```{r warning = FALSE, message = FALSE}
-# calculate mean foldchange over all cell lines for each gene
-e_foldchange_mean_over_cell_lines <- rowMeans(e_foldchange) 
 
 # determine p-value for a paired two-sample t-test between gene expression of treated and untreated samples
 p_values <- sapply(rownames(e_treated), function(x) {
@@ -745,7 +757,6 @@ p_values <- sapply(rownames(e_treated), function(x) {
   t.test(e_treated[x,], e_untreated[x,],paired = T)$p.value}) 
 
 # calculate FDR with benjamini-hochberg (BH)
-# selecting significance of genes with p-value, would give us more false-positives, because most of the genes are not regulated by erlotinib
 FDR_values <- p.adjust(p_values, method = "BH", n = length(p_values)) 
 ```
 
@@ -969,13 +980,14 @@ color_boxplot_e_treated_untreated <- sapply(colnames(e_treated_untreated_biomark
 par(mar = c(16, 4, 2, 2))
 boxplot(e_treated_untreated_biomarkers_final, 
         ylab = "gene expression (log2)", 
-        main = "Boxplot of gene expression of the volcano biomarkers", 
+        main = "Boxplot of gene expression of the biomarkers", 
         ceex = 1.2, 
         las = 2, 
         col = color_boxplot_e_treated_untreated)
 ```
 
 ### Single gene response plot 
+
 ```{r message = FALSE, warning = FALSE, echo = FALSE}
 #comparison with lapatinib
 # new matrix only with samples treated with lapatinib  (l = lapatinib)
@@ -1014,7 +1026,7 @@ df_barplot_results <- df_barplot_results [order(df_barplot_results[,"Cancertypes
 
 ```
 
-```{r message = FALSE, warning = FALSE}
+```{r message = FALSE, warning = FALSE, echo= FALSE}
 
 # create barplot for each gene and color according to cancer type
 plot <- lapply(colnames(df_barplot_results)[3:8], function(gene){
