@@ -258,7 +258,7 @@ legend("topright",
        col = color_palette_drug, 
        pch = 19, 
        xpd = "TRUE",
-       inset = c(-0-22, 0)) #move legend to the right and down
+       inset = c(-0.22, 0)) #move legend to the right and down
 
 # Title for both plots together: mtext = margin text, side = 3 (upside)
 mtext("PCA of FC colored according to drug", 
