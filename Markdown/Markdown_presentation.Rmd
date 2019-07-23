@@ -318,7 +318,6 @@ mtext("PCA of FC colored according to cancertype",
 
 ### Data preparation 
 
-**Filtering of erlotinib data and scaling**
 ```{r }
 # new matrix only with samples treated with erlotinib  (e = erlotinib)
 e_treated <- NCI_TPW_gep_treated[ ,grep ("erlotinib", colnames(NCI_TPW_gep_treated))]
@@ -622,10 +621,14 @@ grid.draw(venn.plot);
 celllines_overlap <- calculate.overlap(venn.list)[[1]] 
 ```
 
-### PCA 
+### Principal Component Analysis
+```{r}
+pca <- prcomp(e_foldchange)
+```
+
 ```{r message = FALSE, warning = FALSE, echo = FALSE}
 # draw PCA, where each point represents a cell line and is colored according to cancer type
-pca <- prcomp(e_foldchange)
+
 par(mar = c(4, 4, 4, 7))
 plot(pca$rotation[,1], 
      pca$rotation[,2], 
@@ -666,7 +669,7 @@ library(progeny)
 progeny_heatmap <- progeny(e_foldchange)
 ```
 
-### Heatmap 
+### Heatmap according to pathways
 ```{r warning = FALSE, fig.height = 6, message = FALSE, include = FALSE}
 # load dendextend
 library(dendextend)
