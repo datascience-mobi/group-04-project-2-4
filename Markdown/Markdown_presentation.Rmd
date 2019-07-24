@@ -819,10 +819,9 @@ plot(LogGI50_59_celllines, e_foldchange ["EGR1",],
      col = e_color_cancertype, 
      pch = 19, 
      xlab = "logGI50", 
-     ylab = "Fold change of EGR1 Expression",        
-     main = "Erlotinib 24h", 
-     cex.main = 1.2, 
-     col.main = "deepskyblue")
+     ylab = "Fold change",        
+     main = "EGR1 expression", 
+     cex.main = 1.2)
 
 # add legend to associate each color with a cancertype
 segments(-7.11, 0, -3.88)
@@ -899,6 +898,8 @@ celllines_final <- intersect(celllines_overlap, LogGI50_top10)
 celllines_final <- intersect(celllines_overlap, LogGI50_top10)
 ```
 
+
+
 ### Select final biomarkers according to GI50 correlation
 
 ```{r}
@@ -907,12 +908,6 @@ cor_all_genes <- sapply(rownames(e_foldchange), function(x){
   cor_test_one_gene <- cor.test(LogGI50_59_celllines, e_foldchange[x,], method = "pearson")
   cor_test_one_gene$estimate
 })
-```
-
-```{r}
-# sort genes according to decreasing correlation value and select 500 genes with the highest correlation value
-cor_all_genes_sorted <- sort(abs(cor_all_genes), decreasing = TRUE)
-cor_top_500_genes <- cor_all_genes_sorted[1:500]
 ```
 
 ```{r, echo = FALSE}
@@ -956,6 +951,8 @@ biomarkers_final <- intersect(names(cor_top_500_genes), names(cor_biomarkers))
 biomarkers_final <- gsub(pattern = ".cor", replacement = "", x = biomarkers_final)
 ```
 
+
+
 ### Compare gene expression of final biomarkers 
 ```{r, echo = FALSE}
 # create matrix only with gene expression of untreated and treated final biomarkers
@@ -988,6 +985,43 @@ boxplot(e_treated_untreated_biomarkers_final,
         las = 2, 
         col = color_boxplot_e_treated_untreated)
 ```
+
+
+
+```{r figCHAC1 , fig.show = "hold",  fig.width = 7, fig.height = 7, warning = FALSE,  message = FALSE, echo = FALSE}
+
+# draw scatter plot of fold change of CHAC1 against LogGI50 and color them according to the cancer type
+par(mar = c(4, 4, 4, 10), xpd = "TRUE")
+plot(LogGI50_59_celllines, e_foldchange ["CHAC1",], 
+     col = e_color_cancertype, 
+     pch = 19, 
+     xlab = "logGI50", 
+     ylab = "Fold change",        
+     main = "CHAC1 expression", 
+     cex.main = 1.2)
+
+# add legend to associate each color with a cancertype
+segments(-7.11, 0, -3.88)
+legend("topright", 
+       legend = names(color_palette_cancertype), 
+       col = color_palette_cancertype, 
+       inset = c(-0.3, 0),
+       pch = 19)
+
+# add linear regression line and set clipping limit
+clip(-7.13, -3.88, -0.15, 1.9)  
+abline(lm (e_foldchange["CHAC1", ]~ LogGI50_59_celllines))
+
+# perform Pearson correlation, to see how well LogGI50 and the fold change correlate with each other 
+cor_CHAC1 <- cor.test(LogGI50_59_celllines, e_foldchange["CHAC1",], method = "pearson")
+cor_CHAC1_estimate <- round(cor_CHAC1$estimate, digits = 3)
+
+# add title to scatter plot, which includes the correlation value
+cor_text <- paste("r = ", cor_CHAC1_estimate)
+mtext(side = 3, line = -1.2, text = cor_text, adj = c(0.01))
+```
+
+
 
 ### Single gene response plot 
 
